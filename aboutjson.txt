@@ -1,0 +1,35 @@
+"title" is what the title of the video file after hard link will be, which must be set.
+"originaltitle" is option.
+"season" only work when "series" is true. Default is 01.
+"episode" will be auto get when "series" is true. Do not manually set.
+"language" is option.
+"subtitle" is option.
+"reselution" is option.
+"encode" is option.
+"country" is option.
+"year" is option.
+"genre" is option.
+"group" is option.
+"studio" is option.
+"director" is option.
+"writer" is option.
+"actor" is option.
+"extra" will be auto get when "template" is set. Do not manually set.
+"extension" will be auto get. Do not manually set.
+"index" only work when "series" is true. It's the index of episode. For example: 
+        [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
+  index: 0         1      2 3   4    5 
+  should set "index": 3
+"series" is ether true or false.
+"linkfolder" is where the video file after hard link will be, which must be set.
+"template" to get extra info. For example:
+    [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
+    [1stgroup]F1 race 2 02v2 [1920x1080][AAC][AVC].mp4
+  set "template": "[1stgroup]F1 race 2  [1920x1080][AAC][AVC]"
+  the second file will hard link to "F1 race.S02.E02.v2.mp4"
+  otherwize the second file will be processed as "F1 race.S02.E02.mp4", same as the frist file. 
+  since "F1 race.S02.E02.mp4" is already exist, the second file will be ignored.
+"subfolder" is ether true or false. Only work when "series" is true. Will put file in separate episode folder. For example: 
+    [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
+    [1stgroup]F1 race 2 03 [1920x1080][AAC][AVC].mp4
+  will be hard link to somewhere/S02/02/F1 race.S02.E02.mp4 and somewhere/S02/03/F1 race.S02.E03.mp4
