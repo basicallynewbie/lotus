@@ -1,0 +1,10 @@
+{
+"title": "somevideo",
+"reselution": "1080P",
+"encode": "AAC.H264",
+"group": "somegroup",
+"language": "Japanese",
+"series": true,
+"subtitle": "Chinese",
+"linkfolder": "/mnt/download/somevideo"
+}
