@@ -1,5 +1,7 @@
 # How to use:
 
+Fristly download source code.
+
 
   For example:
 
@@ -24,3 +26,5 @@ new folder will be created, and hard link will be created too.
       ├example.json
 
 use recursivelink.py if you want to hard link somefile.txt too.
+
+read aboutjson.txt to get more information.
