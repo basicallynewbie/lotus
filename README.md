@@ -2,8 +2,11 @@
 
 Fristly download source code.
 
+## require:
 
-  For example:
+python >=3.11.0
+
+## example:
 
 origin file in the folder look like this:
 
