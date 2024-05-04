@@ -37,18 +37,16 @@ class HardLink():
         except:
             sys.exit(f'{self.jsonfile} is not properly json formated!')
 
+    def checkMeatadata(self):
         if not bool(self.metadata['title']):
             sys.exit('title cannot be empty!')
-
         if not bool(self.metadata['linkfolder']):
             sys.exit('linkfolder cannot be empty!')
-
-    def checkMeatadata(self):
-            if type(self.metadata['series']) != bool:
+        if type(self.metadata['series']) != bool:
                 sys.exit('series need to be true or false')
-            if type(self.metadata['subfolder']) != bool:
+        if type(self.metadata['subfolder']) != bool:
                 sys.exit('subfolder need to be true or false')
-            if type(self.metadata['index']) != int:
+        if type(self.metadata['index']) != int:
                 sys.exit('index need to be a number like 5 neither 5.0 nor 05 nor "5"')
 
     def processMetadata(self, filename):
