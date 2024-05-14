@@ -162,11 +162,11 @@ class HardLink():
 
     def linkAction(self):
         self.checkAction()
-        self.autoLink(self.noneRecursiveWay())
+        self.autoLink(self.noneRecursiveWay)
 
     def recursiveLinkAction(self):
         self.checkAction()
-        self.autoLink(self.recursiveWay())
+        self.autoLink(self.recursiveWay)
 
 if __name__ == '__main__':
     rl = HardLink(sys.argv[1], sys.argv[2])
