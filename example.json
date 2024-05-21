@@ -1,10 +1,19 @@
 {
-"title": "somevideo",
+"title": "exampletv",
+"originaltitle": "",
+"season":  "",
+"language": "Japanese",
+"subtitle": "Chinese",
 "reselution": "1080P",
 "encode": "AAC.H264",
 "group": "somegroup",
-"language": "Japanese",
+"studio": "",
+"director": "",
+"writer": "",
+"actor": "",
+"index": 0,
 "series": true,
-"subtitle": "Chinese",
-"linkfolder": "/mnt/download/somevideo"
+"linkfolder": "/mnt/TV/exampletv/season01",
+"template": "[somegroup] exampletv  [1920x1080p][AAC][AVC][JA][CHS]",
+"subfolder": false
 }
