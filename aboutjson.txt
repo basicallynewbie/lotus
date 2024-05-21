@@ -16,7 +16,7 @@
 "actor" is option.
 "extra" will be auto get when "template" is set. Do not manually set.
 "extension" will be auto get. Do not manually set.
-"index" only work when "series" is true. It's the index of episode. Default is 1. For example: 
+"index" only work when "series" is true. It's the index of episode. Default is 0. For example: 
         [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
   index: 0         1      2 3   4    5 
   should set "index": 3
