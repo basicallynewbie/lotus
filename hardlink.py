@@ -6,9 +6,10 @@ import re
 import difflib
 
 class HardLink():
-    def __init__(self, path, jsonfile):
+    def __init__(self, path: str, jsonfile: str, recursive: bool = False):
         self.path = path
         self.jsonfile = jsonfile
+        self.recursive = recursive
         self.linkfolder = ''
         self.linkpath = ''
 
@@ -43,11 +44,11 @@ class HardLink():
         if not bool(self.metadata['linkfolder']):
             sys.exit('linkfolder cannot be empty!')
         if type(self.metadata['series']) != bool:
-                sys.exit('series need to be true or false')
+            sys.exit('series need to be true or false')
         if type(self.metadata['subfolder']) != bool:
-                sys.exit('subfolder need to be true or false')
+            sys.exit('subfolder need to be true or false')
         if type(self.metadata['index']) != int:
-                sys.exit('index need to be a number like 5 neither 5.0 nor 05 nor "5"')
+            sys.exit('index need to be a number like 5 neither 5.0 nor 05 nor "5"')
 
     def processMetadata(self, filename):
         self.linkfolder = pathlib.Path(self.metadata['linkfolder'])
@@ -58,12 +59,12 @@ class HardLink():
             self.metadata['season'] = 'S' + str(self.metadata['season'])
             
             try:
-                episode = re.findall(r'\d+', filename)
+                episode = re.findall('\d+', filename)
                 episode = episode[int(self.metadata['index'])]
                 extrainfo = r'pv|teaser|trailer|scene|clip|interview|extra|deleted'
                 if bool(re.search(extrainfo, filename, re.IGNORECASE)):
                     self.metadata.pop('episode')
-                elif episode == re.findall(r'\d+', self.metadata['reselution'])[0]:
+                elif episode == re.findall('\d+', self.metadata['reselution'])[0]:
                     self.metadata.pop('episode')
                 else:
                     if self.metadata['subfolder']:
@@ -75,7 +76,7 @@ class HardLink():
             self.metadata.pop('season')
             self.metadata.pop('episode')
 
-        if not bool(re.findall(r'\.', filename)):
+        if not bool(re.findall('\.', filename)):
             self.metadata.pop('extension')
         else:
             self.metadata['extension'] = filename.split('.')[-1]
@@ -85,7 +86,7 @@ class HardLink():
             extra = [x for x in difflib.ndiff(extra, filename) if x[0] != ' ']
             extra = ''.join([x[2] for x in extra])
 
-            trim = re.match(r'\d', extra)
+            trim = re.match('\d', extra)
             if trim != None:
                 extra = re.sub(episode, '', extra)
 
@@ -162,15 +163,11 @@ class HardLink():
 
     def linkAction(self):
         self.checkAction()
-        self.autoLink(self.noneRecursiveWay)
-
-    def recursiveLinkAction(self):
-        self.checkAction()
-        self.autoLink(self.recursiveWay)
+        if self.recursive:
+            self.autoLink(self.recursiveWay())
+        else:
+            self.autoLink(self.noneRecursiveWay())
 
 if __name__ == '__main__':
-    rl = HardLink(sys.argv[1], sys.argv[2])
-    rl.linkAction()
-
-    # nrl = HardLink(sys.argv[1], sys.argv[2])
-    # nrl.recursiveLinkAction()
+    link = HardLink(sys.argv[1], sys.argv[2], sys.argv[3])
+    link.linkAction()
