@@ -1,33 +1,47 @@
-# How to use:
+# how to use
 
-Fristly download source code.
+Download the  source code.
 
 ## require:
 
 python >=3.11.0
 
+## usage:
+
+    ./hardlink.py 'source path' 'reference json' recursive=Ture/False
+
 ## example:
 
-origin file in the folder look like this:
+origin folder look like this:
 
-    /mnt/unsorted/somevideo
-      ├subfolder
-        └somefile.txt
-      ├[somegroup]somevideo 01 [1920x1080][AAC][AVC][JA][CHS].mp4
-      ├[somegroup]somevideo 02 [1920x1080][AAC][AVC][JA][CHS].mp4
-      ├example.json
+    /mnt/examplefolder/
+    └── exampletv
+        └── season01
+            ├── example.json
+            ├── [somegroup] exampletv 01 [1920x1080p][AAC][AVC][JA][CHS].mp4
+            ├── [somegroup] exampletv 02 [1920x1080p][AAC][AVC][JA][CHS].mp4
+            ├── [somegroup] exampletv 03 [1920x1080p][AAC][AVC][JA][CHS].mp4
+            └── pv
+                └── [somegroup] exampletv PV [1920x1080p][AAC][AVC][JA][CHS].mp4
 
-after run this cmd:
+go to the directory where you downloaded the source code.
 
-    python3 /pwd/nonerecursivelink.py '/mnt/unsorted/somevideo' '/mnt/unsorted/somevideo/example.json'
+    cd /somewhere/rename-hardlink
 
-new folder will be created, and hard link will be created too.
+of course, you need read access to source path and write access to link path.
 
-    /mnt/download/somevideo
-      ├somevideo.S01.E01.Japanese.Chinese.1080P.AAC.H264.somegroup.mp4
-      ├somevideo.S01.E02.Japanese.Chinese.1080P.AAC.H264.somegroup.mp4
-      ├example.json
+run cmd below:
 
-use recursivelink.py if you want to hard link somefile.txt too.
+    ./hardlink.py '/mnt/examplefolder/exampletv/' '/mnt/examplefolder/exampletv/season01/example.json' True
+
+the output below:
+
+    /mnt/TV/exampletv/
+    └── season01
+        ├── example.json
+        ├── exampletv.S01.E01.Japanese.Chinese.1080P.AAC.H264.somegroup.mp4
+        ├── exampletv.S01.E02.Japanese.Chinese.1080P.AAC.H264.somegroup.mp4
+        ├── exampletv.S01.E03.Japanese.Chinese.1080P.AAC.H264.somegroup.mp4
+        └── exampletv.S01.Japanese.Chinese.1080P.AAC.H264.somegroup.PV.mp4
 
 read aboutjson.txt to get more information.
