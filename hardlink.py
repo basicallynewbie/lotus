@@ -59,12 +59,12 @@ class HardLink():
             self.metadata['season'] = 'S' + str(self.metadata['season'])
             
             try:
-                episode = re.findall('\d+', filename)
+                episode = re.findall(r'\d+', filename)
                 episode = episode[int(self.metadata['index'])]
                 extrainfo = r'pv|teaser|trailer|scene|clip|interview|extra|deleted'
                 if bool(re.search(extrainfo, filename, re.IGNORECASE)):
                     self.metadata.pop('episode')
-                elif episode == re.findall('\d+', self.metadata['reselution'])[0]:
+                elif episode == re.findall(r'\d+', self.metadata['reselution'])[0]:
                     self.metadata.pop('episode')
                 else:
                     if self.metadata['subfolder']:
@@ -76,7 +76,7 @@ class HardLink():
             self.metadata.pop('season')
             self.metadata.pop('episode')
 
-        if not bool(re.findall('\.', filename)):
+        if not bool(re.findall(r'\.', filename)):
             self.metadata.pop('extension')
         else:
             self.metadata['extension'] = filename.split('.')[-1]
@@ -86,12 +86,12 @@ class HardLink():
             extra = [x for x in difflib.ndiff(extra, filename) if x[0] != ' ']
             extra = ''.join([x[2] for x in extra])
 
-            trim = re.match('\d', extra)
+            trim = re.match(r'\d', extra)
             if trim != None:
-                extra = re.sub(episode, '', extra)
+                extra = re.sub(episode, r'', extra)
 
             if 'extension' in self.metadata:
-                extra = re.sub('.' + self.metadata['extension'], '', extra)
+                extra = re.sub(r'.' + self.metadata['extension'], '', extra)
 
             self.metadata['extra'] = extra
 
