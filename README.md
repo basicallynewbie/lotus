@@ -44,4 +44,7 @@ the output below:
         ├── exampletv.S01.E03.Japanese.Chinese.1080P.AAC.H264.somegroup.mp4
         └── exampletv.S01.Japanese.Chinese.1080P.AAC.H264.somegroup.PV.mp4
 
+## notice
+
+json file must use UTF-8 encode.
 read aboutjson.txt to get more information.
