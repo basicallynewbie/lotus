@@ -1,0 +1,2 @@
+before running this cmd, copy lotus.py into current directory.
+python3 lotus.py hardlink tv example.json -r

@@ -1,0 +1,21 @@
+{
+"title": "exampletv",
+"original_title": "",
+"season":  "02",
+"language": "Japanese",
+"subtitle": "Chinese",
+"quality": "WebRip",
+"reselution": "1080P",
+"encode": "AAC.H264.8Bit",
+"group": "somegroup",
+"studio": "",
+"director": "",
+"writer": "",
+"actor": "",
+"index": 0,
+"series": true,
+"length": 3,
+"target_folder": "exampletv/season02",
+"template": "[somegroup] exampletv  [1920x1080p][AAC][AVC][JA][CHS]",
+"subfolder": false
+}
