@@ -14,7 +14,7 @@ python >=3.11.0
     
     you can't use softlink in windows due to PermissionError.
 
-    python lotus.py [action] 'source path' 'reference json' --recursive
+    python lotus.py [action] "source path" "reference json" --recursive
 
 ## example:
 
