@@ -1,6 +1,6 @@
 # how to use
 
-Download the  source code.
+Download the source code.
 
 ## require:
 
@@ -8,43 +8,48 @@ python >=3.11.0
 
 ## usage:
 
-    ./hardlink.py 'source path' 'reference json' recursive=Ture/False
+    replace python with python3 in unix, the symbol of path is /. 
+
+    there are 3 [action] for choose: test, hardlink, softlink. --recursive is option.
+    
+    you can't use softlink in windows due to PermissionError.
+
+    python lotus.py [action] 'source path' 'reference json' --recursive
 
 ## example:
 
 origin folder look like this:
 
-    /mnt/examplefolder/
-    └── exampletv
-        └── season01
-            ├── example.json
-            ├── [somegroup] exampletv 01 [1920x1080p][AAC][AVC][JA][CHS].mp4
-            ├── [somegroup] exampletv 02 [1920x1080p][AAC][AVC][JA][CHS].mp4
-            ├── [somegroup] exampletv 03 [1920x1080p][AAC][AVC][JA][CHS].mp4
-            └── pv
-                └── [somegroup] exampletv PV [1920x1080p][AAC][AVC][JA][CHS].mp4
+    test
+    └── windows
+        ├── example.json
+        └── tv
+            ├── [somegroup] exampletv 1 [1920x1080p][AAC][AVC][JA][CHS].txt
+            ├── [somegroup] exampletv 2 [1920x1080p][AAC][AVC][JA][CHS].txt
+            ├── ...
+            ├── [somegroup] exampletv 9 [1920x1080p][AAC][AVC][JA][CHS].txt
+            └── 100+
+                └── [somegroup] exampletv 110 [1920x1080p][AAC][AVC][JA][CHS].txt
+                └── [somegroup] exampletv 111 [1920x1080p][AAC][AVC][JA][CHS].txt
+                └── [somegroup] exampletv 112 [1920x1080p][AAC][AVC][JA][CHS].txt
 
-go to the directory where you downloaded the source code.
+go to the directory where you downloaded the source code. and copy lotus.py into test\windows.
 
-    cd /somewhere/rename-hardlink
+    cd somewhere\lotus\test\windows
 
-of course, you need read access to source path and write access to link path.
+of course, you need read access to source path and write access to target path.
 
 run cmd below:
 
-    ./hardlink.py '/mnt/examplefolder/exampletv/' '/mnt/examplefolder/exampletv/season01/example.json' True
+    python lotus.py hardlink "tv" "example.json" -r
 
 the output below:
 
-    /mnt/TV/exampletv/
-    └── season01
-        ├── example.json
-        ├── exampletv.S01.E01.Japanese.Chinese.1080P.AAC.H264.somegroup.mp4
-        ├── exampletv.S01.E02.Japanese.Chinese.1080P.AAC.H264.somegroup.mp4
-        ├── exampletv.S01.E03.Japanese.Chinese.1080P.AAC.H264.somegroup.mp4
-        └── exampletv.S01.Japanese.Chinese.1080P.AAC.H264.somegroup.PV.mp4
+    test\windows\exampletv
+    └── season02
+        ├── exampletv.S02.E001.Japanese.Chinese.WebRip.1080P.AAC.H264.8Bit.somegroup.txt
+        ├── exampletv.S02.E002.Japanese.Chinese.WebRip.1080P.AAC.H264.8Bit.somegroup.txt
+        ├── ...
+        └── exampletv.S02.E112.Japanese.Chinese.WebRip.1080P.AAC.H264.8Bit.somegroup.txt
 
-## notice
-
-json file must use UTF-8 encode.
 read aboutjson.txt to get more information.
