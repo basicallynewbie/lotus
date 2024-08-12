@@ -139,13 +139,19 @@ class Lotus():
         self.jsonfile = pathlib.Path(jsonfile)
         self.recursive = recursive
         if isinstance(recursive, str):
-            if recursive.casefold() not in ['t', 'true', '1', 'f', 'false', '0']:
-                sys.exit('recursive need to be True or False')
+            if recursive.casefold()in ['f', 'false', '0']:
+                self.recursive = False
+            elif recursive.casefold() in ['t', 'true', '1']:
+                self.recursive = True
             else:
-                if recursive.casefold() in ['f', 'false', '0']:
-                    self.recursive = False
-                else:
-                    self.recursive = True
+                sys.exit('recursive need to be True or False')
+        if isinstance(recursive, int):
+            if recursive == 0:
+                self.recursive = False
+            elif recursive == 1:
+                self.recursive = True
+            else:
+                sys.exit('recursive need to be True or False')
 
     def checkUserInput(self) -> None:
         for i in [self.path, self.jsonfile]:
