@@ -53,3 +53,4 @@ python >=3.11.0
         └── exampletv.S02.E112.Japanese.Chinese.WebRip.1080P.AAC.H264.8Bit.somegroup.txt
 
 阅读aboutjson.txt以获取更多信息。
+jsonfile必须为UTF-8编码。如果你的文字编辑器不支持UTF-8编码，则使用createJson.py创建jsonfile。
