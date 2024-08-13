@@ -8,11 +8,11 @@ python >=3.11.0
 
 ## 使用方法:
 
-    在unix中，请使用python3指令，路径符号为/。
+在unix中，请使用python3指令，路径符号为/。
 
-    有3个[action]可供选择：test, hardlink, softlink。--recursive应需使用。
+有3个[action]可供选择：test, hardlink, softlink。--recursive应需使用。
     
-    因为权限问题，你不能在windows中使用softlink。
+因为权限问题，你不能在windows中使用softlink。
 
     python lotus.py [action] "source path" "reference json" --recursive
 
