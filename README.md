@@ -52,4 +52,5 @@ the output below:
         ├── ...
         └── exampletv.S02.E112.Japanese.Chinese.WebRip.1080P.AAC.H264.8Bit.somegroup.txt
 
-read aboutjson.txt to get more information.
+read aboutjson.txt to get more information. 
+json file must use UTF-8 encode. if you test editor doesn't support UTF-8 encode, use createjson.py to create jsonfile.
