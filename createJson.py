@@ -86,11 +86,18 @@ def optionChoise():
 optionChoise()
 
 while True:
-        jsonfile = str(input(f'\nthe path of your jsonfile: '))
+    try:
+        jsonfile = str(input(f'\nthe name of your jsonfile: '))
         if jsonfile == '':
             continue
-        else:
-            break
+        open(f'{jsonfile}', 'x', encoding='UTF-8')
+    except FileExistsError:
+        print(f'{jsonfile} already exist.')
+        continue
+    else:
+        break
 
-with open(f'{jsonfile}', 'w') as json_file:
+with open(f'{jsonfile}', 'w', encoding='UTF-8') as json_file:
     json.dump(jsonDict, json_file)
+
+print(f'{jsonfile} created')
