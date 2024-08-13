@@ -8,11 +8,11 @@ python >=3.11.0
 
 ## usage:
 
-    replace python with python3 in unix, the symbol of path is /. 
+replace python with python3 in unix, the symbol of path is /. 
 
-    there are 3 [action] for choose: test, hardlink, softlink. --recursive is option.
+there are 3 [action] for choose: test, hardlink, softlink. --recursive is option.
     
-    you can't use softlink in windows due to PermissionError.
+you can't use softlink in windows due to PermissionError.
 
     python lotus.py [action] "source path" "reference json" --recursive
 
