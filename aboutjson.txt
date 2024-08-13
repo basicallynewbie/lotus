@@ -1,3 +1,4 @@
+json file must use UTF-8 encode.
 ! you can't use softlink in windows due to perssion error.
 You can not use special character like \/:*?"<>|. You can only use :\/ in "linkfolder".
 "title" is what the title of the video file after hard link will be, which must be set.
