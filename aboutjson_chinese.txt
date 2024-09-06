@@ -26,7 +26,7 @@ jsonfile必须为UTF-8编码。
   应该设置"index"为3
 "series" 可以不设置。只有true和false这2个选项。
 "target_folder"是源文件在链接后的地址，必须设置。
-"template" 可以不设置。用于获得额外信息。例如：
+"template" 可以不设置，当"series"设置为true时必须设置。用于获得额外信息。例如：
     [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
     [1stgroup]F1 race 2 02v2 [1920x1080][AAC][AVC].mp4
   设置"template"为 "[1stgroup]F1 race 2  [1920x1080][AAC][AVC]"
