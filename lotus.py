@@ -1,239 +1,246 @@
-import json
-import pathlib
-import sys
+from json import load, decoder
+from pathlib import Path
+from sys import exit
 import re
-import difflib
-import argparse
+from difflib import ndiff
+from argparse import ArgumentParser
 
 class Lotus():
     def __init__(self) -> None:
-        pass
+        self.fileProcess = self.FileProcess()
 
-    def initMetadata(self) -> None:
-        self.metadata = {
-            'title': '', 'original_title': '', 'season': '01', 'episode': '',
-            'language': '', 'subtitle': '', 'quality': '', 'reselution': '', 
-            'encode': '','country': '', 'year': '', 'genre': '', 'group': '',
-            'studio': '', 'director': '', 'writer': '', 'actor': '','extra': '', 
-            'extension': '', 'index': 0, 'series': False, 'target_folder': '', 
-            'template': '', 'subfolder': False, 'length': 2, 'offset': 0
-            }
-        
-        self.target_name = ''
-        self.subfolder = ''
+    class FileProcess():
+        def __init__(self) -> None:
+            pass
 
-    def updateMetadata(self) -> dict:
-        try:
-            with open(self.jsonfile, 'r', encoding='UTF-8') as f:
-                data = json.load(f)
-                for i in self.metadata.keys():
-                    try:
-                        self.metadata[i] = data[i]
-                    except KeyError:
-                        continue
-        except:
-            sys.exit(f'{self.jsonfile} is not properly json formated!')
-        return self.metadata
+        def getInfo(self, filename: str, metadata: dict) -> None:
+            self.filename = Path(filename).name
+            self.index = metadata['index']
+            self.length = metadata['length']
+            self.offset = metadata['offset']
+            self.template = metadata['template']
+            self.series = metadata['series']
+            self.target_folder = Path(metadata['target_folder'])
+            self.subfolder = metadata['subfolder']
+            self.name_list = [metadata['title_prefix'], metadata['title_rest']]
 
-    def checkMeatadata(self) -> None:
-        for i in ['title', 'target_folder']:
-            if not bool(self.metadata[i]):
-                sys.exit(f'{i} cannot be empty!')
-        for j in ['series', 'subfolder']:
-            if not isinstance(self.metadata[j], bool): 
-                sys.exit('series need to be true or false')
-        for l in ['index', 'length', 'offset']:
-            if not isinstance(self.metadata[l], int):
-                sys.exit(f'{l} need to be a number like 5 neither 5.0 nor 05 nor "5"')
-        escape_char = r'\\|/|:|\*|\?|"|<|>|\|'
-        for k in [
-            'title', 'original_title', 'season', 'language', 
-            'subtitle', 'quality', 'reselution', 'encode', 
-            'country', 'year', 'genre', 'group', 'studio', 
-            'director', 'writer', 'actor', 'template'
-            ]:
-            if bool(re.search(escape_char, self.metadata[k])):
-                # you can use : and \ and / in target_folder
-                sys.exit(f'invaid character: \\/:*?"<>|')
-        self.target_folder = pathlib.Path(self.metadata['target_folder'])
-
-    def processMetadata(self, file_name) -> None:
-        if self.metadata['series']:
-            self.metadata['season'] = 'S' + str(self.metadata['season'])
+        def getEpisode(self) -> str:
+            self.episode = ''
             try:
-                episode = re.findall(r'\d+', file_name)
-                episode = episode[int(self.metadata['index'])]
+                episode = re.findall(r'\d+', self.filename)
                 extra_info = r'pv|teaser|trailer|scene|clip|interview|extra|deleted'
-                if bool(re.search(extra_info, file_name, re.IGNORECASE)):
-                    self.metadata.pop('episode')
-                elif episode == re.findall(r'\d+', self.metadata['reselution'])[0]:
-                    self.metadata.pop('episode')
+                if bool(re.search(extra_info, self.filename, re.IGNORECASE)):
+                    self.episode = ''
+                elif episode == re.findall(r'\d+', self.template):
+                    self.episode = ''
                 else:
-                    if self.metadata['offset']:
-                        episode = str(int(episode) - self.metadata['offset'])
-                    episode = episode.zfill(self.metadata['length'])
-                    self.metadata['episode'] = 'E' + episode
-                    if self.metadata['subfolder']:
-                        self.subfolder = episode
+                    self.episode = episode[int(self.index)]
             except:
-                self.metadata.pop('episode')
-        else:
-            self.metadata.pop('season')
-            self.metadata.pop('episode')
+                self.episode = ''
+            return self.episode
+        
+        def getExtension(self) -> str:
+            if not bool(re.findall(r'\.', self.filename)):
+                self.extension = ''
+            else:
+                self.extension = self.filename.split('.')[-1]
+            return self.extension
+        
+        def getExtra(self) -> str:
+            extra = None
+            if bool(self.template):
+                extra = self.template
+                extra = [x for x in ndiff(extra, self.filename) if x[0] != ' ']
+                extra = ''.join([x[2] for x in extra])
 
-        if not bool(re.findall(r'\.', file_name)):
-            self.metadata.pop('extension')
-        else:
-            self.metadata['extension'] = file_name.split('.')[-1]
+                # get rid of self.episode
+                try:
+                    trim = re.match(r'\d', extra)
+                    if trim != None:
+                        extra = re.sub(self.episode, r'', extra, 1)
+                except:
+                    pass
+                if bool(self.extension):
+                    extra = re.sub(r'.' + self.extension, r'', extra, 1)
+                self.extra = extra
+            return self.extra
+        
+        def getTargetName(self) -> str:
+            if self.series:
+                self.getEpisode()
+                if bool(self.episode):
+                    if self.offset:
+                        self.episode = str(int(self.episode) - self.offset)
+                    self.episode = str(self.episode).zfill(self.length)
+                    self.name_list.insert(1, '.E' + self.episode)
+            self.getExtension()
+            if bool(self.getExtra()):
+                self.name_list.append('.' + self.extra)
+            if bool(self.extension):
+                self.name_list.append('.' + self.extension)
 
-        if bool(self.metadata['template']):
-            extra = self.metadata['template']
-            extra = [x for x in difflib.ndiff(extra, file_name) if x[0] != ' ']
-            extra = ''.join([x[2] for x in extra])
+            self.target_name = ''
+            for i in self.name_list:
+                self.target_name += i
+            return self.target_name
+        
+        def getTargetFolder(self):
+            self.ture_target_folder = self.target_folder
+            if self.subfolder and bool(self.episode):
+                self.ture_target_folder = self.ture_target_folder.joinpath(self.episode)
+            return self.ture_target_folder
+        
+        def getTargetPath(self):
+            self.target_path = self.ture_target_folder.joinpath(self.target_name)
+            return self.target_path
 
-            trim = re.match(r'\d', extra)
-            if trim != None:
-                extra = re.sub(episode, r'', extra)
-
-            if 'episode' in self.metadata:
-                extra = re.sub(str(int(episode)), r'', extra)
-
-            if 'extension' in self.metadata:
-                extra = re.sub(r'.' + self.metadata['extension'], r'', extra)
-
-            self.metadata['extra'] = extra
-
-        pop_list = ['target_folder', 'series', 'index', 'template', 
-                   'subfolder', 'length', 'offset']
-        for l in pop_list:
-            self.metadata.pop(l)
-
-        for i in self.metadata.values():
-            if bool(i):
-                self.target_name = self.target_name + f'.{i}'
-        self.target_name = self.target_name[1:]
-
-        # avoid rename jsonfile
-        if file_name == pathlib.Path(self.jsonfile).name:
-            self.target_name = file_name
-
-# get output name
-    def getTargetName(self, origin_name: str) -> str:
-        self.initMetadata()
-        self.updateMetadata()
-        self.checkMeatadata()
-        self.processMetadata(origin_name)
-        return self.target_name
-    
-# update target_folder if subfolder set to true
-    def getTargetFolder(self) -> str:
-        self.target_folder = pathlib.Path(self.target_folder).joinpath(self.subfolder)
-        return self.target_folder
-
-    def getTargetPath(self) -> str:
-        self.target_path = self.target_folder.joinpath(self.target_name)
-        return self.target_path
-    
     def getUserInput(self, path: str, jsonfile: str, recursive: bool = False) -> None:
-        self.path = pathlib.Path(path)
-        self.jsonfile = pathlib.Path(jsonfile)
+        self.path = Path(path)
+        self.jsonfile = Path(jsonfile)
         self.recursive = recursive
         if isinstance(recursive, str):
-            if recursive.casefold()in ['f', 'false', '0']:
+            if recursive.casefold() in ['f', 'false', '0']:
                 self.recursive = False
             elif recursive.casefold() in ['t', 'true', '1']:
                 self.recursive = True
             else:
-                sys.exit('recursive need to be True or False')
+                exit('recursive need to be True or False')
         if isinstance(recursive, int):
             if recursive == 0:
                 self.recursive = False
             elif recursive == 1:
                 self.recursive = True
             else:
-                sys.exit('recursive need to be True or False')
+                exit('recursive need to be True or False')
 
     def checkUserInput(self) -> None:
         for i in [self.path, self.jsonfile]:
             if not i.exists():
-                sys.exit(f'"{i}" cannot be found!')
+                exit(f'"{i}" cannot be found!')
         if not self.path.is_absolute():
             self.path = self.path.resolve()
 
-# function for testing rename
-    def getOutputPair(self) -> list:
-        self.checkUserInput()
-        output_pair = []
-        def fileAction(origin_path_file):
-            self.getTargetName(origin_path_file.name)
-            self.getTargetFolder()
-            self.getTargetPath()
-            pair_list = []
-            pair_list.append(origin_path_file.name)
-            pair_list.append(self.target_name)
-            output_pair.append(pair_list)
-            
-        if self.recursive:
-            zone = self.path.rglob('*')
-        else:
-            zone = self.path.iterdir()
-
-        if self.path.is_dir():
-            for i in zone:
-                if i.is_file():
-                    fileAction(i)
-        elif self.path.is_file():
-            fileAction(self.path)
-        else:
-            pass
-
-        return output_pair
-
-# function for testing link
-    def testLinkAction(self, origin_path: str) -> None:
-        if not self.target_path.is_file():
-            print(f'{origin_path} <==> {self.target_path} \n')
-        else:
-            print(f'"{self.target_path}" already exist')
-    
-    def createLinkFolder(self) -> None:
-        if not self.target_folder.is_dir():
-            try:
-                self.target_folder.mkdir(parents=True)
-            except:
-                sys.exit(f'no permission to create "{self.target_folder}"')
-
-# can't softlink in windows due to PermissionError
-    def trueLinkAction(self, origin_path: str) -> None:
-        def action(input_path):
-            if self.link_option == 'hardlink':
-                self.target_path.hardlink_to(input_path)
-            elif self.link_option == 'softlink':
-                self.target_path.symlink_to(input_path, target_is_directory=False)
-            else:
-                pass
-
+    def importMetadata(self) -> dict:
+        self.metadata = {
+            'title': '', 'original_title': '', 'season': '01', 'episode': '', 
+            'index': 0, 'series': False, 'target_folder': '', 'subfolder': False, 
+            'length': 2, 'offset': 0, 'template': ''
+            }
         try:
-            self.createLinkFolder()
-            if not self.target_path.is_file():
-                action(origin_path)
-                print(f'{origin_path} <==> {self.target_path}')
-        except:
-            sys.exit(f'no permission to create "{self.target_path}"')
+            with open(self.jsonfile, 'r', encoding='UTF-8') as f:
+                data = load(f)
+                self.metadata.update(data)
+        except decoder.JSONDecodeError:
+            exit(f'{self.jsonfile} is not properly json formated!')
+        except UnicodeDecodeError:
+            exit(f'{self.jsonfile} must use UTF-8 encode!')
+        return self.metadata
 
-    def autoLink(self) -> None:
+    def checkMetadata(self) -> None:
+        for i in ['title', 'target_folder']:
+                if not bool(self.metadata[i]):
+                    exit(f'{i} cannot be empty!')
+        for j in ['series', 'subfolder']:
+            if not isinstance(self.metadata[j], bool): 
+                exit('series need to be true or false')
+        if self.metadata['series']:
+            if not bool(self.metadata['template']):
+                exit('template cannot be empty when series is true')
+        for l in ['index', 'length', 'offset']:
+            if not isinstance(self.metadata[l], int):
+                exit(f'{l} need to be a number like 5 neither 5.0 nor 05 nor "5"')
+        escape_char = r'\\|/|:|\*|\?|"|<|>|\|'
+        # you can use : and \ and / in target_folder
+        if bool(re.search(escape_char[7:], self.metadata['target_folder'])):
+            exit('invaid character *?"<>| in target_folder')
+        for k in self.metadata.keys():
+            if k == 'target_folder':
+                continue
+            if isinstance(self.metadata[k], str):
+                if bool(re.search(escape_char, self.metadata[k])):
+                    exit(f'invaid character \\/:*?"<>| in {k}')
+
+    def processMetadata(self) -> dict:
+        tempdict = {}
+        for i in ['index', 'length', 'offset', 'template', 
+                  'series', 'target_folder', 'subfolder']:
+            tempdict.update({i: self.metadata[i]})
+        
+        self.series = self.metadata['series']
+        
+        if self.metadata['series']:
+            if self.metadata['season'].isdigit():
+                self.metadata['season'] = 'S' + str(self.metadata['season'])
+        else:
+            self.metadata['season'] = ''
+
+        for l in ['target_folder', 'subfolder', 'template',
+                    'series', 'index', 'length', 'offset']:
+            self.metadata.pop(l)
+
+        self.title_prefix = ''
+        for i in ['title', 'original_title', 'season']:
+            if bool(self.metadata[i]):
+                self.title_prefix += f'.{self.metadata[i]}'
+                self.metadata.pop(i)
+        self.title_prefix = self.title_prefix[1:]
+        tempdict.update({'title_prefix': self.title_prefix})
+
+        self.title_rest = ''
+        for j in self.metadata.values():
+            if bool(j):
+                self.title_rest += f'.{j}'
+        tempdict.update({'title_rest': self.title_rest})
+
+        self.metadata.clear()
+        self.metadata.update(tempdict)
+        return self.metadata
+    
+    def autolink(self) -> None:
+        def testLinkAction(origin_path: str) -> None:
+            if not self.fileProcess.target_path.is_file():
+                print(f'{origin_path} <==> {self.fileProcess.target_path} \n')
+            else:
+                print(f'"{self.fileProcess.target_path}" already exist')
+        
+        def createLinkFolder() -> None:
+            if not self.fileProcess.ture_target_folder.is_dir():
+                try:
+                    self.fileProcess.ture_target_folder.mkdir(parents=True)
+                except:
+                    exit(f'no permission to create "{self.fileProcess.ture_target_folder}"')
+        # can't softlink in windows due to PermissionError
+        def trueLinkAction(origin_path: str) -> None:
+            def action(input_path):
+                if self.link_option == 'hardlink':
+                    self.fileProcess.target_path.hardlink_to(input_path)
+                elif self.link_option == 'softlink':
+                    self.fileProcess.target_path.symlink_to(input_path, target_is_directory=False)
+                else:
+                    pass
+
+            try:
+                createLinkFolder()
+                if not self.fileProcess.target_path.is_file():
+                    action(origin_path)
+                    print(f'{origin_path} <==> {self.fileProcess.target_path}')
+            except:
+                exit(f'no permission to create "{self.fileProcess.target_path}"')
+
         def fileAction(origin_path_file):
-            self.getTargetName(origin_path_file.name)
-            self.getTargetFolder()
-            self.getTargetPath()
+            self.fileProcess.getInfo(origin_path_file, self.metadata)
+            self.fileProcess.getTargetName()
+            self.fileProcess.getTargetFolder()
+            self.fileProcess.getTargetPath()
 
             if self.link_option == 'test':
-                self.testLinkAction(origin_path_file)
+                testLinkAction(origin_path_file)
             elif self.link_option == 'hardlink' or 'softlink':
-                self.trueLinkAction(origin_path_file)
+                trueLinkAction(origin_path_file)
             else:
-                sys.exit('link_option only has 3 choices: test, hardlink, softlink')
+                exit('link_option only has 3 choices: test, hardlink, softlink')
 
+        zone = None
         if self.recursive:
             zone = self.path.rglob('*')
         else:
@@ -251,10 +258,13 @@ class Lotus():
     def execute(self, link_option: str) -> None:
         self.link_option = link_option
         self.checkUserInput()
-        self.autoLink()
-
+        self.importMetadata()
+        self.checkMetadata()
+        self.processMetadata()
+        self.autolink()
+    
     def cli(self) -> None:
-        parser = argparse.ArgumentParser(
+        parser = ArgumentParser(
             prog='lotus',
             description='hardlink or softlink file/s to another name in another path'
             )
@@ -277,9 +287,6 @@ class Lotus():
         self.getUserInput(args.path, args.jsonfile, args.recursive)
         self.execute(args.option)
 
-if __name__ == '__main__':  
-    # link = Lotus()
-    # link.getUserInput(sys.argv[1], sys.argv[2], sys.argv[3])
-    # print(link.getOutputPair())
-    # link.execute(sys.argv[4])
+if __name__ == '__main__':
     Lotus().cli()
+    
