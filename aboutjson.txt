@@ -26,7 +26,7 @@ You can only use \:/ in "linkfolder" but can not used special character like \/:
   should set "index": 3
 "series" is option. Is ether true or false.
 "target_folder" is where the video file after hard/symbolic link will be, which must be set.
-"template" is option. Used to get extra info. For example:
+"template" is option, must be set when "series" is true. Used to get extra info. For example:
     [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
     [1stgroup]F1 race 2 02v2 [1920x1080][AAC][AVC].mp4
   set "template": "[1stgroup]F1 race 2  [1920x1080][AAC][AVC]"
