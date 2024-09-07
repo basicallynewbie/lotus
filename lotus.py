@@ -60,9 +60,12 @@ class Lotus():
                         extra = re.sub(self.episode, r'', extra, 1)
                 except:
                     pass
-                if bool(self.extension):
-                    extra = re.sub(r'.' + self.extension, r'', extra, 1)
-                self.extra = extra
+                try:
+                    if bool(self.extension):
+                        extra = re.sub(r'.' + self.extension, r'', extra, 1)
+                except:
+                    pass
+            self.extra = extra
             return self.extra
         
         def getTargetName(self) -> str:
@@ -86,8 +89,11 @@ class Lotus():
         
         def getTargetFolder(self):
             self.ture_target_folder = self.target_folder
-            if self.subfolder and bool(self.episode):
-                self.ture_target_folder = self.ture_target_folder.joinpath(self.episode)
+            try:
+                if self.subfolder and bool(self.episode):
+                    self.ture_target_folder = self.ture_target_folder.joinpath(self.episode)
+            except:
+                pass
             return self.ture_target_folder
         
         def getTargetPath(self):
@@ -166,9 +172,7 @@ class Lotus():
                   'series', 'target_folder', 'subfolder']:
             tempdict.update({i: self.metadata[i]})
         
-        self.series = self.metadata['series']
-        
-        if self.metadata['series']:
+        if tempdict['series']:
             if self.metadata['season'].isdigit():
                 self.metadata['season'] = 'S' + str(self.metadata['season'])
         else:
