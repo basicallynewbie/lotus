@@ -73,8 +73,17 @@ try:
 except:
     pass
 
+try:
+    if jsonDict['series']:
+        requireInput('template')
+    else:
+        template = input(f'\ntemplate (optional): ')
+        jsonDict.update({'template': template})
+except:
+    pass
+
 optionList = [
-                'original_title', 'template', 'language', 'subtitle', 
+                'original_title', 'language', 'subtitle', 
                 'quality', 'reselution', 'encode', 'country', 
                 'year', 'genre', 'group', 'studio', 
                 'director', 'writer', 'actor'                  
