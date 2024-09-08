@@ -47,7 +47,7 @@ class Lotus():
             return self.extension
         
         def getExtra(self) -> str:
-            extra = None
+            extra = ''
             if bool(self.template):
                 extra = self.template
                 extra = [x for x in ndiff(extra, self.filename) if x[0] != ' ']
@@ -74,8 +74,7 @@ class Lotus():
                 if bool(self.episode):
                     if self.offset:
                         self.episode = str(int(self.episode) - self.offset)
-                    self.episode = str(self.episode).zfill(self.length)
-                    self.name_list.insert(1, '.E' + self.episode)
+                    self.name_list.insert(1, '.E' + self.episode.zfill(self.length))
             self.getExtension()
             if bool(self.getExtra()):
                 self.name_list.append('.' + self.extra)
@@ -91,7 +90,9 @@ class Lotus():
             self.ture_target_folder = self.target_folder
             try:
                 if self.subfolder and bool(self.episode):
-                    self.ture_target_folder = self.ture_target_folder.joinpath(self.episode)
+                    self.ture_target_folder = self.ture_target_folder.joinpath(
+                            self.episode.zfill(self.length)
+                        )
             except:
                 pass
             return self.ture_target_folder
@@ -169,7 +170,7 @@ class Lotus():
     def processMetadata(self) -> dict:
         tempdict = {}
         for i in ['index', 'length', 'offset', 'template', 
-                  'series', 'target_folder', 'subfolder']:
+                'series', 'target_folder', 'subfolder']:
             tempdict.update({i: self.metadata[i]})
         
         if tempdict['series']:
@@ -277,14 +278,14 @@ class Lotus():
 
         subparsers.add_parser('test', help= 'print outcome without action')
         subparsers.add_parser('hardlink', 
-                              help= 'Make file/s in path a hard link pointing to target')
+                            help= 'Make file/s in path a hard link pointing to target')
         subparsers.add_parser('softlink', 
-                              help= 'Make file/s in path a symbolic link pointing to target')
+                            help= 'Make file/s in path a symbolic link pointing to target')
 
         parser.add_argument('path', type= str, help= 'The source path of your file or folder')
         parser.add_argument('jsonfile', type= str, help= 'The source path of your jsonfile')
         parser.add_argument('-r', '--recursive', action= 'store_true',
-                     help= 'recursively search folder or not, default not')
+                    help= 'recursively search folder or not, default not')
 
         args = parser.parse_args()
 
@@ -293,4 +294,3 @@ class Lotus():
 
 if __name__ == '__main__':
     Lotus().cli()
-    
