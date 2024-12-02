@@ -27,20 +27,21 @@ class Lotus():
             self.name_list = [metadata['title_prefix'], metadata['title_postfix']]
 
         def getEpisode(self) -> str:
-            episode = re.findall(r'\d+', self.filename)
-            if episode == []:
-                self.episode = ''
-                return self.episode
             extra_info = r'pv|teaser|trailer|scene|clip|interview|extra|deleted'
             if bool(re.search(extra_info, self.filename, re.IGNORECASE)):
                 self.episode = ''
                 return self.episode
-            elif episode == re.findall(r'\d+', self.template):
-                self.episode = ''
-                return self.episode
             else:
-                self.episode = episode[int(self.index)]
-                return self.episode
+                episode = re.findall(r'\d+', self.filename)
+                if episode == [] or len(episode) < self.index:
+                    self.episode = ''
+                    return self.episode
+                elif episode == re.findall(r'\d+', self.template):
+                    self.episode = ''
+                    return self.episode
+                else:
+                    self.episode = episode[self.index]
+                    return self.episode
 
         def getExtension(self) -> str:
             if not bool(re.findall(r'\.', self.filename)):
@@ -51,8 +52,7 @@ class Lotus():
                 return self.extension
 
         def getExtra(self) -> str:
-            extra = self.template
-            extra = [x for x in ndiff(extra, self.filename) if x[0] != ' ']
+            extra = [x for x in ndiff(self.template, self.filename) if x[0] == '+']
             self.extra = ''.join([x[2] for x in extra])
             # get rid of self.episode
             try:
@@ -62,15 +62,19 @@ class Lotus():
                 pass
             if bool(self.extension):
                 self.extra = re.sub(r'.' + self.extension, r'', self.extra, 1)
+            if self.extra == '.':
+                self.extra = ''
             return self.extra
 
         def getTargetName(self) -> str:
             if self.series:
                 self.getEpisode()
                 if bool(self.episode):
+                    self.true_episode = self.episode
                     if self.offset:
                         self.true_episode = str(int(self.episode) - self.offset)
-                    self.name_list.insert(1, '.E' + self.true_episode.zfill(self.length))
+                    self.true_episode = self.true_episode.zfill(self.length)
+                    self.name_list.insert(1, '.E' + self.true_episode)
             self.getExtension()
             if bool(self.template):
                 if bool(self.getExtra()):
@@ -78,18 +82,14 @@ class Lotus():
             if bool(self.extension):
                 self.name_list.append('.' + self.extension)
 
-            self.target_name = ''
-            for i in self.name_list:
-                self.target_name += i
+            self.target_name = ''.join([x for x in self.name_list])
             return self.target_name
 
         def getTargetFolder(self):
             self.ture_target_folder = self.target_folder
             try:
                 if self.subfolder and bool(self.episode):
-                    self.ture_target_folder = self.ture_target_folder.joinpath(
-                                                    self.true_episode.zfill(self.length)
-                                                    )
+                    self.ture_target_folder = self.ture_target_folder.joinpath(self.true_episode)
             except:
                 pass
             return self.ture_target_folder
