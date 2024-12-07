@@ -1,3 +1,7 @@
+# 注意
+
+莲花v3更改了json的格式。但是你可以用https://github.com/basicallynewbie/bamboo来新建或将v2转换陈v3。
+
 # 如何使用
 
 下载源代码。
