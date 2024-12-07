@@ -1,23 +1,10 @@
-json file must use UTF-8 encode.
+jsonfile must use UTF-8 encode.
 ! you can't use softlink in windows due to perssion error.
-You can only use \:/ in "linkfolder" but can not used special character like \/:*?"<>| in other place.
+You can only use \:/ in "linkfolder" but can not used special character like \/:*?"<>| in other place. 
 "title" is what the title of the video file after hard/symbolic link will be, which must be set.
 "original_title" is option.
 "season" only work when "series" is true. Default is 01.
 "episode" will be auto get when "series" is true. Do not manually set.
-"language" is option.
-"subtitle" is option.
-"quality" is option.
-"reselution" is option.
-"encode" is option.
-"country" is option.
-"year" is option.
-"genre" is option.
-"group" is option.
-"studio" is option.
-"director" is option.
-"writer" is option.
-"actor" is option.
 "extra" will be auto get when "template" is set. Do not manually set.
 "extension" will be auto get. Do not manually set.
 "index" only work when "series" is true. It's the index of episode. Default is 0. For example: 
@@ -30,13 +17,13 @@ You can only use \:/ in "linkfolder" but can not used special character like \/:
     [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
     [1stgroup]F1 race 2 02v2 [1920x1080][AAC][AVC].mp4
   set "template": "[1stgroup]F1 race 2  [1920x1080][AAC][AVC]"
-  the second file will hard/symbolic link to "F1 race.S02.E02.v2.mp4"
+  the second file will link to "F1 race.S02.E02.v2.mp4"
   otherwize the second file will be processed as "F1 race.S02.E02.mp4", same as the frist file. 
   since "F1 race.S02.E02.mp4" is already exist, the second file will be ignored.
 "subfolder" is option. Is ether true or false. Only work when "series" is true. Will put file in separate episode folder. For example: 
     [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
     [1stgroup]F1 race 2 03 [1920x1080][AAC][AVC].mp4
-  will be hard/symbolic link to somewhere/S02/02/F1 race.S02.E02.mp4 and somewhere/S02/03/F1 race.S02.E03.mp4
+  will be link to somewhere/S02/02/F1 race.S02.E02.mp4 and somewhere/S02/03/F1 race.S02.E03.mp4
 "length" is option. Default is 2. Will auto fill 0 at the beginning if episode length is less than desire. No need to worry, it'll not throw error if a episode length is bigger thanks to auto adjusting. For example:
   F1 race.S02.E04.mp4
   The episode length is 2. If you want it to be 3, set 3. It will be renamed to "F1 race.S02.E004.mp4". 
@@ -45,3 +32,8 @@ You can only use \:/ in "linkfolder" but can not used special character like \/:
 "offset" is option. It's for some series episode offsetting. For example:
   If a series's season01 has 12 episodes. Then season02's  first episode should be 01, but some series shows 13. To change 13 to 01, set 12. 
   Or, a series has hundreds of episode. You want to separate it to different parts. Like S01E13 = S02E01 set 12 ,S01E25 = S02E13 = S03E01 set 24. But you can't put origin S01E13 in origin season01 folder and so on.
+"separator" is a character for join each items above.Default is ".". separator can only store less than 2 character. For example:
+  when separator is " ": F1 race S02 E104.mp4
+"escape" is a list of files you don't want to rename but want to link. For example:
+  "escape": ["readme.txt", "sample.json"]
+  will link a/readme.txt to b/readme.txt, a/sample.json to b/sample.json
