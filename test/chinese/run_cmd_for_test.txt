@@ -1,4 +1,0 @@
-在运行以下命令前，请把lotus.py复制到当前路径。
-python lotus.py hardlink tv example.json -r
-
-因为权限问题，你不能在windows中使用softlink。
