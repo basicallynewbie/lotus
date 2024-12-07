@@ -1,106 +1,237 @@
 from json import load, decoder
 from pathlib import Path
 from sys import exit
-import re
+from re import search, findall, sub, IGNORECASE
 from difflib import ndiff
 from argparse import ArgumentParser
+from concurrent.futures import ThreadPoolExecutor
+from time import time, strftime, localtime
+from collections import deque
 
-class Lotus():
-    def __init__(self) -> None:
-        self.fileProcess = self.FileProcess()
+class ProcessData:
+    metadata = {'title': '', 'original_title': '', 'season': '01'}
+    reference = {
+        'target_folder': '', 'template': '', 'escape': [],
+        'index': 0, 'length': 2, 'offset': 0, 
+        'subfolder': False,  'series': False, 'separator': '.'
+        }
 
-    class FileProcess():
-        def __init__(self) -> None:
+class JsonProcess:
+    ESCAPE_CHAR = r'\\|/|:|\*|\?|"|<|>|\|'
+
+    def __init__(self, jsonfile: str) -> None:
+        self.jsonfile = jsonfile
+        if not Path(self.jsonfile).exists():
+            exit(f'"{self.jsonfile}" cannot be found!')
+
+    def loadJson(self) -> None:
+        try:
+            with open(self.jsonfile, 'r', encoding='UTF-8') as f:
+                data = load(f)
+                if not ('metadata' and 'reference') in data:
+                    exit(f'{self.jsonfile} must contain metadata and reference!')
+                ProcessData.metadata.update(data['metadata'])
+                ProcessData.reference.update(data['reference'])
+        except decoder.JSONDecodeError:
+            exit(f'{self.jsonfile} is not properly json formated!')
+        except UnicodeDecodeError:
+            exit(f'{self.jsonfile} must use UTF-8 encode!')
+
+    def checkMetadata(self) -> None:
+        if not bool(ProcessData.metadata['title']):
+            exit('title cannot be empty!')
+        for k in ProcessData.metadata.values():
+            if bool(search(self.ESCAPE_CHAR, k)):
+                exit(f'invaid character \\/:*?"<>| in {ProcessData.metadata}')
+        if ProcessData.reference['series']:
+            if ProcessData.metadata['season'].isdigit():
+                ProcessData.metadata['season'] = 'S' + ProcessData.metadata['season']
+        else:
+            ProcessData.metadata['season'] = ''
+
+    def checkReference(self) -> None:
+        if not bool(ProcessData.reference['target_folder']):
+            exit('target_folder cannot be empty!')
+        if len(ProcessData.reference['separator']) > 1:
+            exit('separator can only hold less than 2 character!')
+        for j in ['series', 'subfolder']:
+            if not isinstance(ProcessData.reference[j], bool): 
+                exit(f'{j} need to be True or False!')
+        if ProcessData.reference['series']:
+            if not bool(ProcessData.reference['template']):
+                exit('template cannot be empty when series is true!')
+        for l in ['index', 'length', 'offset']:
+            if not isinstance(ProcessData.reference[l], int):
+                exit(f'{l} need to be a number like 5 neither 5.0 nor 05 nor "5"')
+        # you can use : and \ and / in target_folder
+        if bool(search(self.ESCAPE_CHAR[7:], ProcessData.reference['target_folder'])):
+            exit('invaid character *?"<>| in target_folder!')
+        for k in ProcessData.reference.keys():
+            if k == 'target_folder':
+                continue
+            if isinstance(ProcessData.reference[k], str):
+                if bool(search(self.ESCAPE_CHAR, ProcessData.reference[k])):
+                    exit(f'invaid character \\/:*?"<>| in reference {k}!')
+        # test write access in target_folder
+        try:
+            current_time = strftime("%Y_%m_%d_%H-%M-%S", localtime())
+            testfolder = Path(ProcessData.reference['target_folder']).joinpath(f'lotus_{current_time}')
+            testfolder.mkdir(parents=True)
+            testfolder.rmdir()
+        except:
+            exit(f'have no write access in {ProcessData.reference["target_folder"]}!')
+
+    def processMetadata(self) -> dict:
+        name_prefix = ''
+        for i in ['title', 'original_title', 'season']:
+            if bool(ProcessData.metadata[i]):
+                name_prefix += f'{ProcessData.reference["separator"]}{ProcessData.metadata[i]}'
+            ProcessData.metadata.pop(i)
+        name_prefix = name_prefix[1:]
+        
+        name_postfix = ''
+        try:
+            for j in ProcessData.metadata.values():
+                if bool(j):
+                    name_postfix += f'{ProcessData.reference["separator"]}{j}'
+        except:
             pass
+        
+        ProcessData.metadata.clear()
+        ProcessData.metadata.update({'name_prefix': name_prefix})
+        ProcessData.metadata.update({'name_postfix': name_postfix})
+        return ProcessData.metadata
 
-        def getInfo(self, filename: str, metadata: dict) -> None:
-            self.filename = filename
-            if bool(re.search(r'\\|/', self.filename, re.IGNORECASE)):
-                exit('filename is not a path')
-            self.index = metadata['index']
-            self.length = metadata['length']
-            self.offset = metadata['offset']
-            self.template = metadata['template']
-            self.series = metadata['series']
-            self.target_folder = Path(metadata['target_folder'])
-            self.subfolder = metadata['subfolder']
-            self.name_list = [metadata['title_prefix'], metadata['title_postfix']]
+    def action(self) -> None:
+        self.loadJson()
+        self.checkReference()
+        self.checkMetadata()
+        self.processMetadata()
 
-        def getEpisode(self) -> str:
-            extra_info = r'pv|teaser|trailer|scene|clip|interview|extra|deleted'
-            if bool(re.search(extra_info, self.filename, re.IGNORECASE)):
+    def __call__(self) -> None:
+        self.action()
+
+class FileProcess:
+    def __init__(self, file_name: str, test: str = 'test') -> None:
+        self.file_name = file_name
+        if bool(search(r'\\|/', self.file_name, IGNORECASE)):
+            exit('file_name can not be a path')
+        if test.casefold() == 'test':
+            self.test = True
+        else:
+            self.test = False
+
+    def getEpisode(self) -> str:
+        EXTRA_INFO = r'pv|teaser|trailer|scene|clip|interview|extra|deleted'
+        self.dotepisode = ''
+        if bool(search(EXTRA_INFO, self.file_name, IGNORECASE)):
+            self.episode = ''
+            return self.episode
+        else:
+            episode = findall(r'\d+', self.file_name)
+            if episode == [] or len(episode) < ProcessData.reference['index']:
+                self.episode = ''
+                return self.episode
+            elif episode == findall(r'\d+', ProcessData.reference['template']):
                 self.episode = ''
                 return self.episode
             else:
-                episode = re.findall(r'\d+', self.filename)
-                if episode == [] or len(episode) < self.index:
-                    self.episode = ''
-                    return self.episode
-                elif episode == re.findall(r'\d+', self.template):
-                    self.episode = ''
-                    return self.episode
-                else:
-                    self.episode = episode[self.index]
-                    return self.episode
+                self.episode = episode[ProcessData.reference['index']]
+                string_count = 0
+                for y in ndiff(ProcessData.reference['template'], self.file_name):
+                    if y[0] != ' ':
+                        break
+                    string_count += 1
+                dotepisode = findall(r'^\.\d+', self.file_name[(string_count + len(self.episode)):])
+                if bool(dotepisode):
+                    self.dotepisode = dotepisode[0]
+                return self.episode
 
-        def getExtension(self) -> str:
-            if not bool(re.findall(r'\.', self.filename)):
-                self.extension = ''
-                return self.extension
-            else:
-                self.extension = self.filename.split('.')[-1]
-                return self.extension
+    def getExtension(self) -> str:
+        if not bool(findall(r'\.', self.file_name)):
+            self.extension = ''
+            return self.extension
+        else:
+            self.extension = self.file_name.split('.')[-1]
+            return self.extension
 
-        def getExtra(self) -> str:
-            extra = [x for x in ndiff(self.template, self.filename) if x[0] == '+']
-            self.extra = ''.join([x[2] for x in extra])
-            # get rid of self.episode
-            try:
-                if re.match(r'\d', self.extra) != None:
-                    self.extra = re.sub(self.episode, r'', self.extra, 1)
-            except:
-                pass
-            if bool(self.extension):
-                self.extra = re.sub(r'.' + self.extension, r'', self.extra, 1)
-            if self.extra == '.':
-                self.extra = ''
-            return self.extra
+    def getExtra(self) -> str:
+        extra = [x for x in ndiff(ProcessData.reference['template'], self.file_name) if x[0] == '+']
+        self.extra = ''.join([x[2] for x in extra])
+        if ProcessData.reference['series']:
+            self.extra = sub(self.episode, r'', self.extra, 1)
+            self.extra = sub(self.dotepisode, r'', self.extra, 1)
+        if bool(self.extension):
+            self.extra = sub(f'.{self.extension}', r'', self.extra, 1)
+        rest = set(findall(r'.', self.extra))
+        if rest == {'.', ' '} or rest == {'.'} or rest == {' '}:
+            self.extra = ''
+        return self.extra
 
-        def getTargetName(self) -> str:
-            if self.series:
-                self.getEpisode()
-                if bool(self.episode):
-                    self.true_episode = self.episode
-                    if self.offset:
-                        self.true_episode = str(int(self.episode) - self.offset)
-                    self.true_episode = self.true_episode.zfill(self.length)
-                    self.name_list.insert(1, '.E' + self.true_episode)
+    def getTargetName(self) -> str:
+        if self.file_name in ProcessData.reference['escape']:
+            self.target_name = self.file_name
+            return self.target_name
+        else:
+            name_deque = deque()
+            if ProcessData.reference['series']:
+                if bool(self.getEpisode()):
+                    self.true_episode = str(int(self.episode) - ProcessData.reference['offset'])
+                    self.true_episode = self.true_episode.zfill(ProcessData.reference['length'])
+                    self.true_episode += self.dotepisode
+                    name_deque.append(f'{ProcessData.reference["separator"]}E{self.true_episode}')
+            name_deque.appendleft(ProcessData.metadata['name_prefix'])
+            name_deque.append(ProcessData.metadata['name_postfix'])
             self.getExtension()
-            if bool(self.template):
+            if bool(ProcessData.reference['template']):
                 if bool(self.getExtra()):
-                    self.name_list.append('.' + self.extra)
+                    name_deque.append(ProcessData.reference['separator'] + self.extra)
             if bool(self.extension):
-                self.name_list.append('.' + self.extension)
-
-            self.target_name = ''.join([x for x in self.name_list])
+                name_deque.append('.' + self.extension)
+            
+            self.target_name = ''.join([x for x in name_deque])
             return self.target_name
 
-        def getTargetFolder(self):
-            self.ture_target_folder = self.target_folder
-            try:
-                if self.subfolder and bool(self.episode):
-                    self.ture_target_folder = self.ture_target_folder.joinpath(self.true_episode)
-            except:
-                pass
-            return self.ture_target_folder
+    def getTargetPath(self) -> str:
+        target_folder = Path(ProcessData.reference['target_folder'])
+        try:
+            if ProcessData.reference['subfolder'] and bool(self.episode):
+                target_folder = target_folder.joinpath(self.true_episode)
+        except:
+            pass
+        if not self.test and not target_folder.is_dir():
+            target_folder.mkdir(parents=True)
+        
+        self.target_path = str(target_folder.joinpath(self.target_name))
+        return self.target_path
 
-        def getTargetPath(self):
-            self.target_path = self.ture_target_folder.joinpath(self.target_name)
-            return self.target_path
+    def __str__(self) -> str:
+        self.getTargetName()
+        self.getTargetPath()
+        return self.target_path
 
-    def setUserInput(self, path: str, jsonfile: str, recursive: bool = False) -> None:
+    def __call__(self) -> str:
+        self.getTargetName()
+        self.getTargetPath()
+        return self.target_path
+
+class Lotus:
+    def __init__(self) -> None:
+        pass
+
+    def setPath(self, path: str) -> None:
         self.path = Path(path)
-        self.jsonfile = Path(jsonfile)
+        if not self.path.exists():
+            exit(f'"{self.path}" cannot be found!')
+        if not self.path.is_absolute():
+            self.path = self.path.resolve()
+
+    def setLinkOption(self, link_option: str) -> None:
+        self.link_option = link_option.casefold()
+        if link_option not in ['hardlink', 'softlink', 'test']:
+            exit('link_option only has 3 choices: test, hardlink, softlink')
+
+    def setRecursive(self, recursive: bool = False) -> None:
         self.recursive = recursive
         if isinstance(recursive, str):
             if recursive.casefold() in ['f', 'false', '0']:
@@ -117,167 +248,82 @@ class Lotus():
             else:
                 exit('recursive need to be True or False')
 
-    def checkUserInput(self) -> None:
-        for i in [self.path, self.jsonfile]:
-            if not i.exists():
-                exit(f'"{i}" cannot be found!')
-        if not self.path.is_absolute():
-            self.path = self.path.resolve()
+    def recursiveFilepool(self):
+        for i in self.path.rglob('*'):
+            if i.is_file():
+                yield i
 
-    def importMetadata(self) -> dict:
-        self.metadata = {
-            'title': '', 'original_title': '', 'season': '01', 'episode': '', 
-            'index': 0, 'series': False, 'target_folder': '', 'subfolder': False, 
-            'length': 2, 'offset': 0, 'template': ''
-            }
-        try:
-            with open(self.jsonfile, 'r', encoding='UTF-8') as f:
-                data = load(f)
-                self.metadata.update(data)
-        except decoder.JSONDecodeError:
-            exit(f'{self.jsonfile} is not properly json formated!')
-        except UnicodeDecodeError:
-            exit(f'{self.jsonfile} must use UTF-8 encode!')
-        return self.metadata
+    def unRecursiveFilepool(self):
+        for i in self.path.iterdir():
+            if i.is_file():
+                yield i
 
-    def checkMetadata(self) -> None:
-        for i in ['title', 'target_folder']:
-                if not bool(self.metadata[i]):
-                    exit(f'{i} cannot be empty!')
-        for j in ['series', 'subfolder']:
-            if not isinstance(self.metadata[j], bool): 
-                exit('series need to be true or false')
-        if self.metadata['series']:
-            if not bool(self.metadata['template']):
-                exit('template cannot be empty when series is true')
-        for l in ['index', 'length', 'offset']:
-            if not isinstance(self.metadata[l], int):
-                exit(f'{l} need to be a number like 5 neither 5.0 nor 05 nor "5"')
-        escape_char = r'\\|/|:|\*|\?|"|<|>|\|'
-        # you can use : and \ and / in target_folder
-        if bool(re.search(escape_char[7:], self.metadata['target_folder'])):
-            exit('invaid character *?"<>| in target_folder')
-        for k in self.metadata.keys():
-            if k == 'target_folder':
-                continue
-            if isinstance(self.metadata[k], str):
-                if bool(re.search(escape_char, self.metadata[k])):
-                    exit(f'invaid character \\/:*?"<>| in {k}')
+    def action(self, origin_path: Path, target_path: Path) -> None:
+        pass
 
-    def processMetadata(self) -> dict:
-        tempdict = {}
-        for i in ['index', 'length', 'offset', 'template', 
-                'series', 'target_folder', 'subfolder']:
-            tempdict.update({i: self.metadata[i]})
-        
-        if tempdict['series']:
-            if self.metadata['season'].isdigit():
-                self.metadata['season'] = 'S' + str(self.metadata['season'])
+    def hardlinkaction(self, origin_path: Path, target_path: Path) -> None:
+        target_path.hardlink_to(origin_path)
+
+    def softlinkaction(self, origin_path: Path, target_path: Path) -> None:
+        target_path.symlink_to(origin_path, target_is_directory=False)
+
+    def linkAction(self, origin_path: Path) -> str:
+        target_path = Path(FileProcess(origin_path.name, self.link_option)())
+        # side effect link files
+        if not target_path.is_file():
+            self.action(origin_path, target_path)
+            return f'{origin_path} <={self.link_option}=> {target_path}'
         else:
-            self.metadata['season'] = ''
+            return f'"{target_path}" already exist'
 
-        for l in ['target_folder', 'subfolder', 'template',
-                    'series', 'index', 'length', 'offset']:
-            self.metadata.pop(l)
-
-        self.title_prefix = ''
-        for i in ['title', 'original_title', 'season']:
-            if bool(self.metadata[i]):
-                self.title_prefix += f'.{self.metadata[i]}'
-                self.metadata.pop(i)
-        self.title_prefix = self.title_prefix[1:]
-        tempdict.update({'title_prefix': self.title_prefix})
-
-        self.title_postfix = ''
-        for j in self.metadata.values():
-            if bool(j):
-                self.title_postfix += f'.{j}'
-        tempdict.update({'title_postfix': self.title_postfix})
-
-        self.metadata.clear()
-        self.metadata.update(tempdict)
-        return self.metadata
-
-    # can't softlink in windows due to PermissionError
-    def linkAction(self, origin_path: str) -> None:
-        def createLinkFolder() -> None:
-            if not self.fileProcess.ture_target_folder.is_dir():
-                try:
-                    self.fileProcess.ture_target_folder.mkdir(parents=True)
-                except:
-                    exit(f'no permission to create "{self.fileProcess.ture_target_folder}"')
-        def action(input_path):
-            if self.link_option == 'hardlink':
-                self.fileProcess.target_path.hardlink_to(input_path)
-            elif self.link_option == 'softlink':
-                self.fileProcess.target_path.symlink_to(input_path, target_is_directory=False)
-            else:
-                pass
-        try:
-            if not self.link_option == 'test':
-                createLinkFolder()
-            if not self.fileProcess.target_path.is_file():
-                action(origin_path)
-                print(f'{origin_path} <==> {self.fileProcess.target_path}')
-            else:
-                print(f'"{self.fileProcess.target_path}" already exist')
-        except:
-            exit(f'no permission to create "{self.fileProcess.target_path}"')
-
-    def autolink(self) -> None:
-        def fileAction(origin_file_path):
-            self.fileProcess.getInfo(origin_file_path.name, self.metadata)
-            self.fileProcess.getTargetName()
-            self.fileProcess.getTargetFolder()
-            self.fileProcess.getTargetPath()
-            self.linkAction(origin_file_path)
-
-        zone = self.path.iterdir()
-        if self.recursive:
-            zone = self.path.rglob('*')
-
+    def autoLink(self) -> None:
+        if self.link_option == 'hardlink':
+            self.action = self.hardlinkaction
+        if self.link_option == 'softlink':
+            self.action = self.softlinkaction
         if self.path.is_dir():
-            for i in zone:
-                if i.is_file():
-                    fileAction(i)
+            file_pool = self.unRecursiveFilepool
+            if self.recursive:
+                file_pool = self.recursiveFilepool
+            with ThreadPoolExecutor() as executor:
+                for single_task in executor.map(self.linkAction, file_pool()):
+                    print(single_task)
         elif self.path.is_file():
-            fileAction(self.path)
+            print(self.linkAction(self.path))
         else:
             pass
 
-    def execute(self, link_option: str) -> None:
-        self.link_option = link_option
-        if link_option.casefold() not in ['hardlink', 'softlink', 'test']:
-            exit('link_option only has 3 choices: test, hardlink, softlink')
-        self.checkUserInput()
-        self.importMetadata()
-        self.checkMetadata()
-        self.processMetadata()
-        self.autolink()
+    def cmd(self, option: str, path: str, jsonfile: str, recursive: bool = False) -> None:
+        begin = time()
+        self.setPath(path)
+        self.setLinkOption(option)
+        self.setRecursive(recursive)
+        JsonProcess(jsonfile).action()
+        self.autoLink()
+        end = time()
+        print(f"Total runtime of the program is {end - begin} s")
 
     def cli(self) -> None:
         parser = ArgumentParser(
-            prog='lotus',
-            description='hardlink or softlink file/s to another name in another path'
+            prog= 'lotus',
+            description= 'hardlink or softlink file/s to another name in another path in same disk'
             )
-
+        
         subparsers = parser.add_subparsers(dest= 'option', required= True)
-
+        
         subparsers.add_parser('test', help= 'print outcome without action')
         subparsers.add_parser('hardlink', 
                                 help= 'Make file/s in path a hard link pointing to target')
         subparsers.add_parser('softlink', 
                                 help= 'Make file/s in path a symbolic link pointing to target')
-
+        
         parser.add_argument('path', type= str, help= 'The source path of your file or folder')
         parser.add_argument('jsonfile', type= str, help= 'The source path of your jsonfile')
         parser.add_argument('-r', '--recursive', action= 'store_true',
-                    help= 'recursively search folder or not, default not')
-
+                    help= 'recursively search folder or not, default is not')
+        
         args = parser.parse_args()
-
-        self.setUserInput(args.path, args.jsonfile, args.recursive)
-        self.execute(args.option)
+        self.cmd(args.option, args.path, args.jsonfile, args.recursive)
 
 if __name__ == '__main__':
     Lotus().cli()
