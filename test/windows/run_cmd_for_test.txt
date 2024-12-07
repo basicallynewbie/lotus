@@ -1,4 +1,0 @@
-before running this cmd, copy lotus.py into current directory.
-python lotus.py hardlink tv example.json -r
-
-! you can't use softlink in windows due to PermissionError.
