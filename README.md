@@ -1,6 +1,6 @@
 # notice
 
-incus v3 changed json format. but you can use https://github.com/basicallynewbie/bamboo to convert v2 to v3 or generate.
+lotus v3 changed json format. but you can use https://github.com/basicallynewbie/bamboo to convert v2 to v3 or generate.
 
 # how to use
 
