@@ -1,39 +1,134 @@
-jsonfile must use UTF-8 encode.
-! you can't use softlink in windows due to perssion error.
-You can only use \:/ in "linkfolder" but can not used special character like \/:*?"<>| in other place. 
-"title" is what the title of the video file after hard/symbolic link will be, which must be set.
-"original_title" is option.
-"season" only work when "series" is true. Default is 01.
-"episode" will be auto get when "series" is true. Do not manually set.
-"extra" will be auto get when "template" is set. Do not manually set.
-"extension" will be auto get. Do not manually set.
-"index" only work when "series" is true. It's the index of episode. Default is 0. For example: 
-        [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
-  index: 0         1      2 3   4    5 
-  should set "index": 3
-"series" is option. Is ether true or false.
-"target_folder" is where the video file after hard/symbolic link will be, which must be set.
-"template" is option, must be set when "series" is true. Used to get extra info. For example:
-    [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
-    [1stgroup]F1 race 2 02v2 [1920x1080][AAC][AVC].mp4
-  set "template": "[1stgroup]F1 race 2  [1920x1080][AAC][AVC]"
-  the second file will link to "F1 race.S02.E02.v2.mp4"
-  otherwize the second file will be processed as "F1 race.S02.E02.mp4", same as the frist file. 
-  since "F1 race.S02.E02.mp4" is already exist, the second file will be ignored.
-"subfolder" is option. Is ether true or false. Only work when "series" is true. Will put file in separate episode folder. For example: 
-    [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
-    [1stgroup]F1 race 2 03 [1920x1080][AAC][AVC].mp4
-  will be link to somewhere/S02/02/F1 race.S02.E02.mp4 and somewhere/S02/03/F1 race.S02.E03.mp4
-"length" is option. Default is 2. Will auto fill 0 at the beginning if episode length is less than desire. No need to worry, it'll not throw error if a episode length is bigger thanks to auto adjusting. For example:
-  F1 race.S02.E04.mp4
-  The episode length is 2. If you want it to be 3, set 3. It will be renamed to "F1 race.S02.E004.mp4". 
-  [1stgroup]F1 race 2 104 [1920x1080][AAC][AVC].mp4
-  The episode length is 3. If not configed, default "length" is 2. But there will be no error when renaming to "F1 race.S02.E104.mp4".
-"offset" is option. It's for some series episode offsetting. For example:
-  If a series's season01 has 12 episodes. Then season02's  first episode should be 01, but some series shows 13. To change 13 to 01, set 12. 
-  Or, a series has hundreds of episode. You want to separate it to different parts. Like S01E13 = S02E01 set 12 ,S01E25 = S02E13 = S03E01 set 24. But you can't put origin S01E13 in origin season01 folder and so on.
-"separator" is a character for join each items above.Default is ".". separator can only store less than 2 character. For example:
-  when separator is " ": F1 race S02 E104.mp4
-"escape" is a list of files you don't want to rename but want to link. For example:
-  "escape": ["readme.txt", "sample.json"]
-  will link a/readme.txt to b/readme.txt, a/sample.json to b/sample.json
+{
+    "metadata": {
+        "title": "foo",
+        "original_title": "bar",
+        "season": "02",
+        "custom": "anything",
+        "add": "more",
+        "foo": "bar"
+    },
+    "reference": {
+        "target_folder": "foo",
+        "episode_symbol": "episode",
+        "template": "bar",
+        "separator": "_",
+        "index": 0,
+        "length": 2,
+        "offset": -12,
+        "subfolder": false,
+        "series": true,
+        "no_extra": false,
+        "escape": [
+            "foo",
+            "bar"
+        ],
+        "replace": {
+            "foo": "bar"
+        }
+    }
+}
+
+notice:
+
+  ! you can't use softlink in windows due to perssion error.
+
+  no need to use UTF-8 encode now, but it's still recommend to.
+
+  str: character surrounded by double quotation marks.
+  int: a whole number, positive or negative, without decimals, of unlimited length.
+  float: a number, positive or negative, containing one decimal.
+  bool: true or false.
+  list: one or multiple items in [].
+  dict: items in key:value pairs in {}.
+  in this program, list and dict only store str.
+
+  special character are \/:*?"<>|
+  replace can use every character
+  target_folder and escape and ignore can use \:/ 
+  manual can use \:/ and manual's key must be a path
+  in other place, you can not used special character.
+
+  special use for items startwith ./ or .\ : will change ./ or .\ to source directory, except manual's values. For example:
+    source directory is "dir".
+    "manual": {"./s.txt": "./d.txt"}
+    will change to "manual": {"dir/s.txt": "./d.txt"}
+    "./d.txt" in windows, will create a directory with name ".". In unix, will not create directory.
+
+  everything except title is optional.
+
+  for more informations, look test folder.
+
+metadata:
+
+  "title" (str) is what the title of the video file after hard/symbolic link will be, which must be set.
+
+  "original_title" (str).
+
+  "season" (str) only work when "series" is true. Default is 01.
+
+  you can add more custom pairs.
+
+reference:
+
+  "series" (bool).
+
+  "subfolder" (bool) only work when "series" is true. Will put file in separate episode folder. For example: 
+      [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
+      [1stgroup]F1 race 2 03 [1920x1080][AAC][AVC].mp4
+    will be link to "somewhere/S02/02/F1 race.S02.E02.mp4" and "somewhere/S02/03/F1 race.S02.E03.mp4".
+
+  "no_extra" (bool) will not colect any extra info even template is configed.
+
+  "target_folder" (str) is where the video file after hard/symbolic link will be. if not set, will default to terminal current working path.
+
+  "template" (str) must be set when "series" is true, even no_extra is true. Use for getting extra info. For example:
+      [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
+      [1stgroup]F1 race 2 02v2 [1920x1080][AAC][AVC].mp4
+    set "template": "[1stgroup]F1 race 2  [1920x1080][AAC][AVC]"
+    the second file will link to "F1 race.S02.E02.v2.mp4"
+    otherwize the second file will be processed as "F1 race.S02.E02.mp4", same as the frist file. 
+    since "F1 race.S02.E02.mp4" is already exist, the second file will be ignored.
+
+  "episode_symbol" (str) default is "E".
+
+  "separator" (str) for join each items above. Default is ".". separator can only store less than 2 character. For example:
+    when separator is " ": F1 race S02 E104.mp4
+
+  "index" (int) only work when "series" is true. It's the index of episode. Default is 0, cannot be less than 0. For example: 
+          [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
+    index:^0^^^^^^^^^1^^^^^^2^3^^^4^^^^5 
+    should set "index": 3
+
+  "length" (int) default is 2, cannot be less than 0. Will auto fill 0 at the beginning if episode length is less than desire. 
+   No need to worry, it'll not throw error even a episode length is bigger. For example:
+    F1 race.S02.E04.mp4
+    The episode length is 2. If you want it to be 3, set 3. It will be renamed to "F1 race.S02.E004.mp4". 
+    [1stgroup]F1 race 2 104 [1920x1080][AAC][AVC].mp4
+    The episode length is 3. If not configed, default "length" is 2. But there will be no error when renaming to "F1 race.S02.E104.mp4".
+
+  "offset" (int) is for some series episode offsetting. For example:
+    If a series's season01 has 12 episodes. Then season02's first episode should be 01, but some series shows 13. To change 13 to 01, set 12. 
+    Or, a series has hundreds of episode. You want to separate it to different parts. 
+    Like S01E13 = S02E01 set 12 ,S01E25 = S02E13 = S03E01 set 24. But you can't put origin S01E13 in origin season01 folder and so on.
+
+  "escape" (list) is files you don't want to rename but want to link. For example:
+    "escape": ["readme.txt", "sample.json"]
+    will link a/readme.txt to b/readme.txt, a/sample.json to b/sample.json.
+
+  "ignore" (list) is files you don't want to link. For example:
+    "ignore": ["ignore.txt"]
+    nothing will happen to ignore.txt.
+
+  "replace" (dict) will replace all key with value. For example:
+    "replace": {"fuck": "shit"}
+    [1stgroup]F1 race 2 02 fuck no, my team failed again, fuck [1920x1080][AAC][AVC].mp4
+    will replace all "fuck" with "shit": "[1stgroup]F1 race 2 02 shit no, my team failed again, shit [1920x1080][AAC][AVC].mp4".
+    be careful with this, may change "fucking" to "shiting". 
+    to exactly replace "fuck" with "shit" instead of "fucking" with "shiting", should be using "\\bfuck\\b". 
+    it is an advance option, perform a limited version of re.sub action, may produce unwanted result. do it at your risk.
+    read this for more detail: https://docs.python.org/3/library/re.html
+    once master re, you are capable of writing your own rename script without this program.
+
+  "manual" (dict) will link key to value. For example:
+    "manual": {"./s.txt": "d/d.txt"}
+    will link a/s.txt to d/d.txt, despite target_folder is b.
