@@ -1,0 +1,16 @@
+{
+    "metadata": {
+        "title": "exampletv"
+    },
+    "reference": {
+        "target_folder": "destination",
+        "series": true,
+        "template": "[somegroup] exampletv  [1920x1080p][AAC][AVC][JA][CHS]",
+        "ignore": [
+            "hash.txt"
+        ],
+        "manual": {
+            "./[somegroup] exampletv special [1920x1080p][AAC][AVC][JA][CHS].txt": "movie/exampletv.S01.movie.txt"
+        }
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "metadata": {
+        "title": "exampletv"
+    },
+    "reference": {
+        "target_folder": "destination",
+        "series": true,
+        "no_extra": true,
+        "offset": -10,
+        "template": "[somegroup] exampletv  [1920x1080p][AAC][AVC][JA][CHS]"
+    }
+}

@@ -1,0 +1,41 @@
+{
+    "metadata": {
+        "title": "exampletv",
+        "original_title": "",
+        "season": "season02",
+        "language": "Japanese",
+        "subtitle": "Chinese",
+        "quality": "WebRip",
+        "reselution": "1080P",
+        "audio": "AAC",
+        "encode": "H264",
+        "depth": "8Bit",
+        "group": "somegroup",
+        "add": "new"
+    },
+    "reference": {
+        "index": 0,
+        "series": true,
+        "length": 4,
+        "target_folder": "destination/season02",
+        "template": "[somegroup] exampletv  [1920x1080p][AAC][AVC][JA][CHS]",
+        "subfolder": true,
+        "escape": [
+            "./10+/escape.txt",
+            "norename.txt"
+        ],
+        "ignore": [
+            "ignore.txt"
+        ],
+        "offset": 0,
+        "separator": "-",
+        "replace": {
+            "replace": "replaced"
+        },
+        "episode_symbol": "episode",
+        "no_extra": false,
+        "manual": {
+            "./manual.txt": "manual/manualed.txt"
+        }
+    }
+}
