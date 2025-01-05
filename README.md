@@ -1,16 +1,33 @@
-# notice
+# What is lotus
+
+lotus is a cli tool for creating hardlink or softlink file/s with another name in another path in batch.
+
+## What is hardlink or softlink
+
+unix:
+    https://www.redhat.com/en/blog/linking-linux-explained
+
+windows:
+    hardlink:
+        https://learn.microsoft.com/en-us/windows/win32/fileio/hard-links-and-junctions
+    softlink:
+        https://learn.microsoft.com/en-us/windows/win32/fileio/symbolic-links
+
+
+## notice
 
 lotus v3 changed json format. but you can use https://github.com/basicallynewbie/bamboo to convert v2 to v3 or generate.
 
-# how to use
 
-Download the source code.
+## requirement
 
-## require:
+python >= 3.11.0
 
-python >=3.11.0
+## how to use
 
-## usage:
+Download the source code or compiled program.
+
+## usage
 
 replace python with python3 in unix, the symbol of path is /. 
 
@@ -20,41 +37,10 @@ you can't use softlink in windows due to PermissionError.
 
     python lotus.py [action] "source path" "reference json" --recursive
 
-## example:
+## more
 
-origin folder look like this:
+see test folder for examples.
 
-    test
-    └── windows
-        ├── example.json
-        └── tv
-            ├── [somegroup] exampletv 1 [1920x1080p][AAC][AVC][JA][CHS].txt
-            ├── [somegroup] exampletv 2 [1920x1080p][AAC][AVC][JA][CHS].txt
-            ├── ...
-            ├── [somegroup] exampletv 9 [1920x1080p][AAC][AVC][JA][CHS].txt
-            └── 100+
-                └── [somegroup] exampletv 110 [1920x1080p][AAC][AVC][JA][CHS].txt
-                └── [somegroup] exampletv 111 [1920x1080p][AAC][AVC][JA][CHS].txt
-                └── [somegroup] exampletv 112 [1920x1080p][AAC][AVC][JA][CHS].txt
+read aboutjson.txt to get more information.
 
-go to the directory where you downloaded the source code. and copy lotus.py into test\windows.
-
-    cd somewhere\lotus\test\windows
-
-of course, you need read access to source path and write access to target path.
-
-run cmd below:
-
-    python lotus.py hardlink "tv" "example.json" -r
-
-the output below:
-
-    test\windows\exampletv
-    └── season02
-        ├── exampletv.S02.E001.Japanese.Chinese.WebRip.1080P.AAC.H264.8Bit.somegroup.txt
-        ├── exampletv.S02.E002.Japanese.Chinese.WebRip.1080P.AAC.H264.8Bit.somegroup.txt
-        ├── ...
-        └── exampletv.S02.E112.Japanese.Chinese.WebRip.1080P.AAC.H264.8Bit.somegroup.txt
-
-read aboutjson.txt to get more information. 
-jsonfile must use UTF-8 encode. if you test editor doesn't support UTF-8 encode, use createJson.py to create jsonfile.
+jsonfile doesn't need to use UTF-8 encode now, but it's still recommended.
