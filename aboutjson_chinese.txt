@@ -1,39 +1,133 @@
-jsonfile必须为UTF-8编码。
-! 因为权限问题，你在windows中无法使用softlink。
-你在"linkfolder"中可以使用这3个特殊符号 \:/ 其它地方不能使用这些特殊符号 \/:*?"<>|
-"title"是源文件在链接后的标题名，必须设置。
-"original_title" 可以不设置。
-"season"只有当"series"设置为true时才生效。默认为01。
-"episode"在"series"设置为true时会自动生成。请勿手动设置。
-"extra"在"template"设置时会自动生成。请勿手动设置。
-"extension"会自动生成。请勿手动设置。
-"index"只有当"series"设置为true时才生效。这是episode在标题名的位置。默认为0。例如： 
-        [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
-  index: 0         1      2 3   4    5 
-  应该设置"index"为3
-"series" 可以不设置。只有true和false这2个选项。
-"target_folder"是源文件在链接后的地址，必须设置。
-"template" 可以不设置，当"series"设置为true时必须设置。用于获得额外信息。例如：
-    [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
-    [1stgroup]F1 race 2 02v2 [1920x1080][AAC][AVC].mp4
-  设置"template"为 "[1stgroup]F1 race 2  [1920x1080][AAC][AVC]"
-  第二个文件链接的标题名将会为"F1 race.S02.E02.v2.mp4"
-  要不然第二个文件链接的标题名依然会为"F1 race.S02.E02.mp4"，和第一个文件一样。
-  因为"F1 race.S02.E02.mp4"已经存在，第二个文件会被忽略。
-"subfolder" 可以不设置。只有true和false这2个选项。只有当"series"设置为true时才生效。将会把文件放进对应的episode文件夹中。例如：
-    [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
-    [1stgroup]F1 race 2 03 [1920x1080][AAC][AVC].mp4
-  将会被链接到somewhere/S02/02/F1 race.S02.E02.mp4和somewhere/S02/03/F1 race.S02.E03.mp4
-"length" 可以不设置。默认为2。将会自动在episode前面用0填充到理想的长度。不必担心，在episode长度大于默认值时会自动校正，不会报错。例如：
-  F1 race.S02.E04.mp4
-  episode长度为2。如果想要episode长度为3，设置为3。将会重命名为"F1 race.S02.E004.mp4"。
-  [1stgroup]F1 race 2 104 [1920x1080][AAC][AVC].mp4
-  episode长度为3。如果没有设置，默认值将会为2。但是在重命名为"F1 race.S02.E104.mp4"时不会报错。
-"offset" 可以不设置。 用于校正series的episode。例如：
-  如果有个series的第一季有12集。那第二季最开始那集应该为01，但是有些series会以13集开始。为了将13变成01，设置为12。
-  如果有个series有几百集,你想把它拆分。例如：S01E13 = S02E01则设置为12，S01E25 = S02E13 = S03E01则设置为24。不过你不可以将源的S01E13放进源的season01中，以此类推。
-"separator"是用来连接以上项的单个字符。默认为"."。separator只能小于2个字符。例如： 
-  当separator为" "时：F1 race S02 E104.mp4
-"escape"是一个你不想重命名但是又想链接的文件的列表。例如：
-  "escape": ['readme.txt', 'sample.json']
-  将会链接a/readme.txt和b/readme.txt，a/sample.json和b/sample.json。
+{
+    "metadata": {
+        "title": "foo",
+        "original_title": "bar",
+        "season": "02",
+        "custom": "anything",
+        "add": "more",
+        "foo": "bar"
+    },
+    "reference": {
+        "target_folder": "foo",
+        "episode_symbol": "episode",
+        "template": "bar",
+        "separator": "_",
+        "index": 0,
+        "length": 2,
+        "offset": -12,
+        "subfolder": false,
+        "series": true,
+        "no_extra": false,
+        "escape": [
+            "foo",
+            "bar"
+        ],
+        "replace": {
+            "foo": "bar"
+        }
+    }
+}
+
+注意：
+
+  ! 因为权限问题，你在windows中无法使用softlink。
+
+  现在无需使用UTF-8，但还是推荐。
+
+  str: 用双引号括起来的字符。
+  int: 整数，正数或负数，无小数，长度不受限制。
+  float: 一个数字（正数或负数），包含一个小数点。
+  bool: true或者false。
+  list: 一个或者多个项目在[]。
+  dict: 键:值对的项目在{}。
+  在此程序中, list和dict只储存str。
+
+  特殊符号是\/:*?"<>|
+  replace中可以使用任何符号
+  target_folder和escape和ignore可以使用\:/ 
+  manual可以使用\:/ 并且manual的键必须为路径
+  在其它地方不能使用特殊符号
+
+  开头为./或.\的特别使用：将会把./或.\替换成源文件夹，manual的值除外。例如： 
+    源文件夹为"dir"。
+    "manual": {"./s.txt": "./d.txt"}
+    将会变成"manual": {"dir/s.txt": "./d.txt"}
+    "./d.txt"在windows中将会创建个名为.的文件夹，在unix中不会。
+
+    除了title外，都不是必要的。
+
+  
+metadata:
+
+  "title" (str) 是源文件在链接后的标题名，必须设置。
+
+  "original_title" (str)。
+
+  "season" (str) 只有当"series"设置为true时才生效。默认为01。
+
+  你可以增加任意键值对。
+
+reference:
+
+  "series" (bool)。
+
+  "subfolder" (bool) 只有当"series"设置为true时才生效。将会把文件放进对应的episode文件夹中。例如：
+      [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
+      [1stgroup]F1 race 2 03 [1920x1080][AAC][AVC].mp4
+    将会被链接到somewhere/S02/02/F1 race.S02.E02.mp4和somewhere/S02/03/F1 race.S02.E03.mp4
+
+  "no_extra" (bool) 不会收集任何额外信息，就算设置了template。
+
+  "target_folder" (str) 是源文件在链接后的地址。如果不设置，会自动变成当前终端的路径。
+
+  "template" (str) 当"series"设置为true时，就算no_extra为true时也必须设置。用于获得额外信息。例如：
+      [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
+      [1stgroup]F1 race 2 02v2 [1920x1080][AAC][AVC].mp4
+    设置"template"为 "[1stgroup]F1 race 2  [1920x1080][AAC][AVC]"
+    第二个文件链接的标题名将会为"F1 race.S02.E02.v2.mp4"
+    要不然第二个文件链接的标题名依然会为"F1 race.S02.E02.mp4"，和第一个文件一样。
+    因为"F1 race.S02.E02.mp4"已经存在，第二个文件会被忽略。
+
+  "episode_symbol" (str) 默认为E。
+
+  "separator" (str) 是用来连接以上项的单个字符。默认为"."。separator只能小于2个字符。例如： 
+    当separator为" "时：F1 race S02 E104.mp4
+
+  "index" (int) 只有当"series"设置为true时才生效。这是episode在标题名的位置。默认为0，不能小于0。例如： 
+          [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
+    index:^0^^^^^^^^^1^^^^^^2^3^^^4^^^^5 
+    应该设置"index"为3
+
+  "length" (int) 默认为2，不能小于0。将会自动在episode前面用0填充到理想的长度。
+  不必担心，在episode长度大于默认值时会自动校正，不会报错。例如：
+    F1 race.S02.E04.mp4
+    episode长度为2。如果想要episode长度为3，设置为3。将会重命名为"F1 race.S02.E004.mp4"。
+    [1stgroup]F1 race 2 104 [1920x1080][AAC][AVC].mp4
+    episode长度为3。如果没有设置，默认值将会为2。但是在重命名为"F1 race.S02.E104.mp4"时不会报错。
+
+  "offset" (int) 用于校正series的episode。例如：
+    如果有个series的第一季有12集。那第二季最开始那集应该为01，但是有些series会以13集开始。为了将13变成01，设置为12。
+    如果有个series有几百集,你想把它拆分。
+    例如：S01E13 = S02E01则设置为12，S01E25 = S02E13 = S03E01则设置为24。不过你不可以将源的S01E13放进源的season01中，以此类推。
+
+  "escape" (list) 是一个你不想重命名但是又想链接的文件的列表。例如：
+    "escape": ['readme.txt', 'sample.json']
+    将会链接a/readme.txt和b/readme.txt，a/sample.json和b/sample.json。
+
+  "ignore" (list) 是一个你不想链接的文件的列表。例如：
+    "ignore": ["ignore.txt"]
+    对ignore.txt而言，什么都不会发生。
+
+  "replace" (dict) 会把所有的键都换成值。例如：
+    "replace": {"fuck": "shit"}
+    [1stgroup]F1 race 2 02 fuck no, my team failed again, fuck [1920x1080][AAC][AVC].mp4
+    将会把所有"fuck"换成"shit"："[1stgroup]F1 race 2 02 shit no, my team failed again, shit [1920x1080][AAC][AVC].mp4"
+    使用时得注意，可能把"fucking"换成"shiting"。
+    为了精确把"fuck"换成"shit"，而不把"fucking"换成"shiting"，应该用"\\bfuck\\b"。
+    这是一个高级功能，执行一个限制的re.sub命令，可能会出现预想外的结果。小心使用，概不负责。
+    详细：https://docs.python.org/3/library/re.html
+    熟练使用re后，你就可以抛弃该程序，自己写重命名脚本了。
+
+  "manual" (dict) 会直接创建键和值的链接。例如：
+    "manual": {"./s.txt": "d/d.txt"}
+    将会链接a/s.txt和d/d.txt, 就算target_folder设置成b.
