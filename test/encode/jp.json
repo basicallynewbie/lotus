@@ -1,0 +1,11 @@
+{
+    "metadata": {
+        "title": "ÆüËÜ¸ì"
+    },
+    "reference": {
+        "target_folder": "destination",
+        "series": true,
+        "index": 1,
+        "template": "[F1] exampletv  [1920x1080p][AAC][AVC][JA][CHS]"
+    }
+}

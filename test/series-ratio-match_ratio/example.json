@@ -1,0 +1,12 @@
+{
+    "metadata": {
+        "title": "exampletv"
+    },
+    "reference": {
+        "target_folder": "destination",
+        "series": true,
+        "match_ratio": true,
+        "template": "[somegroup] exampletv  [1920x1080p][AAC][AVC][JA][CHS]",
+        "ratio": 0.95
+    }
+}
