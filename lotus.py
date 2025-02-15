@@ -1,62 +1,63 @@
 from json import load, decoder
 from pathlib import Path
-from sys import exit
+from sys import exit as exits
 from re import search, findall, sub, IGNORECASE
 from difflib import ndiff, SequenceMatcher
 from argparse import ArgumentParser
 from concurrent.futures import ThreadPoolExecutor
 from time import time, strftime, localtime
 from collections import deque
-import _locale
-_locale._getdefaultlocale = (lambda *args: ['en_US', 'utf8'])
+from codecs import open as opens
 
 class ProcessData:
     metadata = {'title': '', 'original_title': '', 'season': '01'}
     reference = {
-        'subfolder': False,  'series': False, 'no_extra': False,
-        'target_folder': '', 'episode_symbol': 'E', 'template': '', 
-        'separator': '.', 'index': 0, 'length': 2, 'offset': 0, 
-        'escape': [], 'ignore': [], 'replace': {}, 'manual': {},
-        'ratio': 0.5
+        'series': False, 'subfolder': False, 'no_extra': False, 'match_ratio': False, 
+        'target_folder': '', 'template': '', 'episode_symbol': 'E', 'separator': '.', 
+        'index': 0, 'length': 2, 'offset': 0, 'ratio': 0.5,
+        'escape': [], 'ignore': [], 'replace': {}, 'manual': {}
         }
 
 class JsonProcess:
     ESCAPE_CHAR = r'\\|/|:|\*|\?|"|<|>|\|'
 
-    def __init__(self, jsonfile: str) -> None:
+    def __init__(self, jsonfile: str, encode: str = 'utf-8-sig') -> None:
         self.jsonfile = jsonfile
         if not Path(self.jsonfile).exists():
-            exit(f'"{self.jsonfile}" cannot be found!')
+            exits(f'"{self.jsonfile}" cannot be found!')
+        self.encode = encode
 
     def loadJson(self) -> None:
         try:
-            with open(self.jsonfile, 'r') as f:
+            with opens(self.jsonfile, 'r', encoding=self.encode) as f:
                 data = load(f)
-                if not 'metadata' in data:
-                    exit(f'{self.jsonfile} must contain metadata!')
-                ProcessData.metadata.update(data['metadata'])
-                try:
-                    ProcessData.reference.update(data['reference'])
-                except:
-                    pass
         except decoder.JSONDecodeError:
-            exit(f'{self.jsonfile} is not properly json formated!')
-        except UnicodeDecodeError:
-            exit(f'cannot decode {self.jsonfile}!')
+            exits(f'{self.jsonfile} is not properly json formated!')
+        finally:
+            try:
+                ProcessData.metadata.update(data['metadata'])
+            except KeyError:
+                exits(f'{self.jsonfile} must contain metadata!')
+            except UnboundLocalError:
+                exits(f'cannot decode {self.jsonfile}!')
+            try:
+                ProcessData.reference.update(data['reference'])
+            except KeyError:
+                pass
 
     def checkReferenceBool(self) -> None:
-        for j in ['series', 'subfolder', 'no_extra']:
+        for j in ['series', 'subfolder', 'no_extra', 'match_ratio']:
             if not isinstance(ProcessData.reference[j], bool): 
-                exit(f'reference {j} need to be True or False!')
+                exits(f'reference {j} need to be True or False!')
 
     def checkReferenceStr(self) -> None:
         if not bool(ProcessData.reference['target_folder']):
             ProcessData.reference['target_folder'] = str(Path().absolute())
         if len(ProcessData.reference['separator']) > 1:
-            exit('reference separator can only hold less than 2 character!')
-        if ProcessData.reference['series']:
+            exits('reference separator can only hold less than 2 character!')
+        if ProcessData.reference['series'] or ProcessData.reference['match_ratio']:
             if not bool(ProcessData.reference['template']):
-                exit('reference template cannot be empty when series is true!')
+                exits('reference template cannot be empty when series or match_ratio is true!')
         for t in ['target_folder', 'template', 'separator', 'episode_symbol']:
             if not isinstance(ProcessData.reference[t], str):
                 ProcessData.reference[t] = str(ProcessData.reference[t])
@@ -64,51 +65,51 @@ class JsonProcess:
         for k in ProcessData.reference.keys():
             if k == 'target_folder':
                 if bool(search(self.ESCAPE_CHAR[7:], ProcessData.reference['target_folder'])):
-                    exit('invaid character *?"<>| in reference target_folder!')
+                    exits('invaid character *?"<>| in reference target_folder!')
                 continue
             if isinstance(ProcessData.reference[k], str):
                 if bool(search(self.ESCAPE_CHAR, ProcessData.reference[k])):
-                    exit(f'invaid character \\/:*?"<>| in reference {k}!')
+                    exits(f'invaid character \\/:*?"<>| in reference {k}!')
 
     def checkReferenceInt(self) -> None:
         for l in ['index', 'length', 'offset']:
             if not isinstance(ProcessData.reference[l], int):
-                exit(f'reference {l} need to be a number like 5 neither 5.0 nor 05 nor "5"')
+                exits(f'reference {l} need to be a number like 5 neither 5.0 nor 05 nor "5"')
         for n in ['index', 'length']:
             if  ProcessData.reference[n] < 0:
-                exit(f'reference {n} need to be a number greater than or equal to 0')
+                exits(f'reference {n} need to be a number greater than or equal to 0')
 
     def checkReferenceFloat(self) -> None:
         if not isinstance(ProcessData.reference['ratio'], float):
-            exit('reference ratio need to be a number like 0.5 neither 5 nor 5.0 nor 05 nor "5"')
+            exits('reference ratio need to be a number like 0.5 neither 5 nor 5.0 nor 05 nor "5"')
         if not 0 < ProcessData.reference['ratio'] < 1:
-            exit('reference ratio need to be a number greater than 0 and less than 1')
+            exits('reference ratio need to be a number greater than 0 and less than 1')
 
     def checkReferenceList(self) -> None:
         # you can use : and \ and / in escape and ignore
         for p in ['escape', 'ignore']:
             if not isinstance(ProcessData.reference[p], list): 
-                exit(f'reference {p} need to be a list!')
+                exits(f'reference {p} need to be a list!')
             for f in ProcessData.reference[p]:
                 if not isinstance(f, str): 
-                    exit(f'reference {p} can only store string!')
+                    exits(f'reference {p} can only store string!')
                 if bool(search(self.ESCAPE_CHAR[7:], f)):
-                    exit(f'invaid character *?"<>| in reference {p}!')
+                    exits(f'invaid character *?"<>| in reference {p}!')
 
     def checkReferenceDict(self) -> None:
         for d in ['replace', 'manual']:
             if not isinstance(ProcessData.reference[d], dict): 
-                exit(f'reference {d} need to be a dictionary!')
+                exits(f'reference {d} need to be a dictionary!')
             for i in (set(ProcessData.reference[d].keys()) | set(ProcessData.reference[d].values())):
                 if not isinstance(i, str): 
-                    exit(f'reference {d} can only store string!')
+                    exits(f'reference {d} can only store string!')
         # you can use every character in replace
         # you can use : and \ and / in manual
         for u in ProcessData.reference['manual'].keys():
             if not bool(search(r'\\|/', u)):
-                exit("reference manual's key must be a path")
+                exits("reference manual's key must be a path")
             if bool(search(self.ESCAPE_CHAR[7:], (u or ProcessData.reference['manual'][u]))):
-                exit('invaid character *?"<>| in reference manual!')
+                exits('invaid character *?"<>| in reference manual!')
 
     def checkWriteAccess(self) -> None:
         # test write access in target_folder
@@ -118,16 +119,16 @@ class JsonProcess:
             testfolder.mkdir(parents=True)
             testfolder.rmdir()
         except:
-            exit(f'have no write access in {ProcessData.reference["target_folder"]}!')
+            exits(f'have no write access in {ProcessData.reference["target_folder"]}!')
 
     def checkMetadata(self) -> None:
         if not bool(ProcessData.metadata['title']):
-            exit('title cannot be empty!')
+            exits('title cannot be empty!')
         for k in ProcessData.metadata.keys():
             if not isinstance(ProcessData.metadata[k], str):
                 ProcessData.metadata[k] = str(ProcessData.metadata[k])
             if bool(search(self.ESCAPE_CHAR, ProcessData.metadata[k])):
-                exit(f'invaid character \\/:*?"<>| in metadata {k}')
+                exits(f'invaid character \\/:*?"<>| in metadata {k}')
         if ProcessData.reference['series']:
             if ProcessData.metadata['season'].isdigit():
                 ProcessData.metadata['season'] = f"S{ProcessData.metadata['season']}"
@@ -158,9 +159,9 @@ class JsonProcess:
     def action(self) -> None:
         self.loadJson()
         self.checkReferenceBool()
+        self.checkReferenceFloat()
         self.checkReferenceStr()
         self.checkReferenceInt()
-        self.checkReferenceFloat()
         self.checkReferenceList()
         self.checkReferenceDict()
         self.checkWriteAccess()
@@ -174,7 +175,7 @@ class FileProcess:
     def __init__(self, file_name: str) -> None:
         self.file_name = file_name
         if bool(search(r'\\|/', self.file_name)):
-            exit('file_name can not be a path')
+            exits('file_name can not be a path')
 
     def getEpisode(self) -> str:
         EXTRA_INFO = r'pv|teaser|trailer|scene|clip|interview|extra|deleted'
@@ -214,8 +215,12 @@ class FileProcess:
         if SequenceMatcher(
                 a=ProcessData.reference['template'], 
                 b=self.file_name
-                ).ratio() > ProcessData.reference['ratio']:
-            extra = [x for x in ndiff(ProcessData.reference['template'], self.file_name) if x[0] == '+']
+                ).ratio() >= ProcessData.reference['ratio']:
+            extra = [
+                x 
+                for x in ndiff(ProcessData.reference['template'], self.file_name) 
+                if x[0] == '+'
+                ]
             self.extra = ''.join([i[2] for i in extra])
         else:
             self.extra = self.file_name
@@ -286,7 +291,7 @@ class Lotus:
     def setPath(self, path: str) -> None:
         self.path = Path(path)
         if not self.path.exists():
-            exit(f'"{self.path}" cannot be found!')
+            exits(f'"{self.path}" cannot be found!')
         if not self.path.is_absolute():
             self.path = self.path.resolve()
         if self.path.is_file():
@@ -296,8 +301,8 @@ class Lotus:
 
     def setLinkOption(self, link_option: str) -> None:
         self.link_option = link_option.casefold()
-        if self.link_option not in ['hardlink', 'softlink', 'test']:
-            exit('link_option only has 3 choices: test, hardlink, softlink')
+        if self.link_option not in ['hardlink', 'softlink', 'test', 'rename']:
+            exits('link_option only has 4 choices: test, hardlink, softlink, rename')
 
     def setRecursive(self, recursive: bool = False) -> None:
         self.recursive = recursive
@@ -307,16 +312,16 @@ class Lotus:
             elif recursive.casefold() in ['t', 'true', '1']:
                 self.recursive = True
             else:
-                exit('recursive need to be True or False')
+                exits('recursive need to be True or False')
         if isinstance(recursive, int):
             if recursive == 0:
                 self.recursive = False
             elif recursive == 1:
                 self.recursive = True
             else:
-                exit('recursive need to be True or False')
+                exits('recursive need to be True or False')
         if not isinstance(self.recursive, bool):
-            exit('recursive was given a wrong type')
+            exits('recursive was given a wrong type')
 
     def processList(self, key) -> list:
         for i in range(len(ProcessData.reference[key])):
@@ -349,11 +354,14 @@ class Lotus:
     def action(self, origin_path: Path, target_path: Path) -> None:
         pass
 
-    def hardlinkaction(self, origin_path: Path, target_path: Path) -> None:
+    def hardlinkAction(self, origin_path: Path, target_path: Path) -> None:
         target_path.hardlink_to(origin_path)
 
-    def softlinkaction(self, origin_path: Path, target_path: Path) -> None:
+    def softlinkAction(self, origin_path: Path, target_path: Path) -> None:
         target_path.symlink_to(origin_path, target_is_directory=False)
+
+    def renameAction(self, origin_path: Path, target_path: Path) -> None:
+        origin_path.rename(target_path)
 
     def linkAction(self, origin_path: Path) -> str:
         if origin_path in ProcessData.reference['ignore'] \
@@ -365,8 +373,18 @@ class Lotus:
             target_path = Path(ProcessData.reference['target_folder']).joinpath(origin_path.name)
         elif origin_path in ProcessData.reference['manual'].keys():
             target_path = Path(ProcessData.reference['manual'][origin_path])
-        else:
+        elif ProcessData.reference['match_ratio']:
+            if SequenceMatcher(
+                a=ProcessData.reference['template'], 
+                b=origin_path.name
+                ).ratio() >= ProcessData.reference['ratio']:
+                target_path = Path(FileProcess(origin_path.name)())
+            else:
+                return ''
+        elif not ProcessData.reference['match_ratio']:
             target_path = Path(FileProcess(origin_path.name)())
+        else:
+            return ''
         
         if not self.link_option == 'test' and not target_path.parent.exists():
             target_path.parent.mkdir(parents=True)
@@ -379,9 +397,11 @@ class Lotus:
 
     def autoLink(self) -> None:
         if self.link_option == 'hardlink':
-            self.action = self.hardlinkaction
+            self.action = self.hardlinkAction
         if self.link_option == 'softlink':
-            self.action = self.softlinkaction
+            self.action = self.softlinkAction
+        if self.link_option == 'rename':
+            self.action = self.renameAction
         if self.path.is_dir():
             file_pool = self.unRecursiveFilepool
             if self.recursive:
@@ -394,12 +414,18 @@ class Lotus:
         else:
             pass
 
-    def cmd(self, option: str, path: str, jsonfile: str, recursive: bool = False) -> None:
+    def cmd(
+            self, option: str, 
+            path: str, 
+            jsonfile: str, 
+            recursive: bool = False, 
+            encode: str = 'utf-8-sig'
+            ) -> None:
         begin = time()
         self.setPath(path)
         self.setLinkOption(option)
         self.setRecursive(recursive)
-        JsonProcess(jsonfile)()
+        JsonProcess(jsonfile, encode)()
         self.processList('escape')
         self.processList('ignore')
         self.processManual()
@@ -420,14 +446,17 @@ class Lotus:
                                 help='Make file/s in path a hard link pointing to target')
         subparsers.add_parser('softlink', 
                                 help='Make file/s in path a symbolic link pointing to target')
+        subparsers.add_parser('rename', 
+                                help='rename file/s')
         
         parser.add_argument('path', type=str, help='The source path of your file or folder')
         parser.add_argument('jsonfile', type=str, help='The source path of your jsonfile')
         parser.add_argument('-r', '--recursive', action='store_true',
                     help='recursively search folder or not, default is not')
+        parser.add_argument('--encode', type=str, help='The encode of your jsonfile', required=False)
         
         args = parser.parse_args()
-        self.cmd(args.option, args.path, args.jsonfile, args.recursive)
+        self.cmd(args.option, args.path, args.jsonfile, args.recursive, args.encode)
 
 if __name__ == '__main__':
     Lotus().cli()
