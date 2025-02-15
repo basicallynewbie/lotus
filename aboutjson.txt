@@ -79,9 +79,11 @@ reference:
 
   "no_extra" (bool) will not colect any extra info even template is configed.
 
+  "match_ratio" (bool) will ignore files which match template less than ratio. depend on ratio and template.
+
   "target_folder" (str) is where the video file after hard/symbolic link will be. if not set, will default to terminal current working path.
 
-  "template" (str) must be set when "series" is true, even no_extra is true. Use for getting extra info. For example:
+  "template" (str) must be set when "series" or "match_ratio" is true, even no_extra is true. Use for getting extra info. For example:
       [1stgroup]F1 race 2 02 [1920x1080][AAC][AVC].mp4
       [1stgroup]F1 race 2 02v2 [1920x1080][AAC][AVC].mp4
     set "template": "[1stgroup]F1 race 2  [1920x1080][AAC][AVC]"
@@ -110,6 +112,8 @@ reference:
     If a series's season01 has 12 episodes. Then season02's first episode should be 01, but some series shows 13. To change 13 to 01, set 12. 
     Or, a series has hundreds of episode. You want to separate it to different parts. 
     Like S01E13 = S02E01 set 12 ,S01E25 = S02E13 = S03E01 set 24. But you can't put origin S01E13 in origin season01 folder and so on.
+
+  "ratio" (float) default is 0.5, cannot less equal to 0 or greater equal to 1. the match ratio of file name and template.
 
   "escape" (list) is files you don't want to rename but want to link. For example:
     "escape": ["readme.txt", "sample.json"]
