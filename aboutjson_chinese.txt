@@ -78,6 +78,8 @@ reference:
 
   "no_extra" (bool) 不会收集任何额外信息，就算设置了template。
 
+  "match_ratio" (bool) 将会无视文件名占template比率小于ratio的文件。依赖于ratio和template。
+
   "target_folder" (str) 是源文件在链接后的地址。如果不设置，会自动变成当前终端的路径。
 
   "template" (str) 当"series"设置为true时，就算no_extra为true时也必须设置。用于获得额外信息。例如：
@@ -109,6 +111,8 @@ reference:
     如果有个series的第一季有12集。那第二季最开始那集应该为01，但是有些series会以13集开始。为了将13变成01，设置为12。
     如果有个series有几百集,你想把它拆分。
     例如：S01E13 = S02E01则设置为12，S01E25 = S02E13 = S03E01则设置为24。不过你不可以将源的S01E13放进源的season01中，以此类推。
+
+  "ratio" (float) 默认为0.5, 不能小于等于0或大于等于1。是文件名与template的符合比率。
 
   "escape" (list) 是一个你不想重命名但是又想链接的文件的列表。例如：
     "escape": ['readme.txt', 'sample.json']
