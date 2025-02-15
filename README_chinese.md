@@ -5,12 +5,17 @@
 ## 什么是硬链接或软链接
 
 unix:
+
     https://www.redhat.com/en/blog/linking-linux-explained
 
 windows:
-    硬链接：
+
+硬链接：
+
     https://learn.microsoft.com/zh-cn/windows/win32/fileio/hard-links-and-junctions
-    软链接：
+
+软链接：
+
     https://learn.microsoft.com/zh-cn/windows/win32/fileio/symbolic-links
 
 ## 注意
@@ -29,11 +34,11 @@ python >= 3.11.0
 
 在unix中，请使用python3指令，路径符号为/。
 
-有3个[action]可供选择：test, hardlink, softlink。--recursive应需使用。
-    
+有4个[action]可供选择：test, hardlink, softlink, rename。--recursive应需使用。 --encode应需使用。 
+
 因为权限问题，你不能在windows中使用softlink。
 
-    python lotus.py [action] "source path" "reference json" --recursive
+    python lotus.py [action] "source path" "reference json" --recursive --encode whatever
 
 ## 其它
 
@@ -41,4 +46,4 @@ python >= 3.11.0
 
 阅读aboutjson_chinese.txt以获取更多信息。
 
-jsonfile现在不需要为UTF-8编码，但还是推荐。
+jsonfile现在不需要为UTF-8编码，但还是推荐。你可以选择任何编码，只要不混合使用。
