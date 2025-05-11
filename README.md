@@ -1,6 +1,6 @@
 # What is lotus
 
-lotus is a cli tool for creating hardlink or softlink file/s with another name in another path in batch.
+lotus is a cli tool for rename hardlink or softlink file/s in another path in batch.
 
 ## What is hardlink or softlink
 
@@ -38,7 +38,7 @@ replace python with python3 in unix, the symbol of path is /.
 
 there are 4 [action] for choose: test, hardlink, softlink, rename. --recursive is option. --encode is option.
 
-you can't use softlink in windows due to PermissionError.
+you can't use softlink as normal user in windows due to PermissionError. But you can use softlink as Administrator.
 
     python lotus.py [action] "source path" "reference json" --recursive --encode whatever
 
