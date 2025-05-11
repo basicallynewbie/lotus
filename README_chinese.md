@@ -1,6 +1,6 @@
 # 什么是莲花
 
-莲花是个用于批量创建硬/软链接并重命名的命令行软件。
+莲花是个用于批量重命名创建硬/软链接的命令行软件。
 
 ## 什么是硬链接或软链接
 
@@ -36,7 +36,7 @@ python >= 3.11.0
 
 有4个[action]可供选择：test, hardlink, softlink, rename。--recursive应需使用。 --encode应需使用。 
 
-因为权限问题，你不能在windows中使用softlink。
+因为权限问题，你不能在windows中以正常用户使用softlink。但是能以管理员身份使用softlink。
 
     python lotus.py [action] "source path" "reference json" --recursive --encode whatever
 
