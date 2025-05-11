@@ -30,8 +30,6 @@
 
 注意：
 
-  ! 因为权限问题，你在windows中无法使用softlink。
-
   现在无需使用UTF-8，但还是推荐。
 
   str: 用双引号括起来的字符。
@@ -80,6 +78,8 @@ reference:
 
   "match_ratio" (bool) 将会无视文件名占template比率小于ratio的文件。依赖于ratio和template。
 
+  "keep" (bool) 将会保留原文件夹结构。如果该文件在escape、ignore或manual，将不会生效。
+
   "target_folder" (str) 是源文件在链接后的地址。如果不设置，会自动变成当前终端的路径。
 
   "template" (str) 当"series"设置为true时，就算no_extra为true时也必须设置。用于获得额外信息。例如：
@@ -122,7 +122,7 @@ reference:
     "ignore": ["ignore.txt"]
     对ignore.txt而言，什么都不会发生。
 
-  "replace" (dict) 会把所有的键都换成值。例如：
+  "replace" (dict) 会把所有在extra中的键都换成值。例如：
     "replace": {"fuck": "shit"}
     [1stgroup]F1 race 2 02 fuck no, my team failed again, fuck [1920x1080][AAC][AVC].mp4
     将会把所有"fuck"换成"shit"："[1stgroup]F1 race 2 02 shit no, my team failed again, shit [1920x1080][AAC][AVC].mp4"
