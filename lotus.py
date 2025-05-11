@@ -1,7 +1,7 @@
 from json import load, decoder
 from pathlib import Path
 from sys import exit as exits
-from re import search, findall, sub, IGNORECASE
+from re import search, findall, sub, compile
 from difflib import ndiff, SequenceMatcher
 from argparse import ArgumentParser
 from concurrent.futures import ThreadPoolExecutor
@@ -9,11 +9,12 @@ from time import time, strftime, localtime
 from collections import deque
 from codecs import open as opens
 
-class ProcessData:
+class Data:
     metadata = {'title': '', 'original_title': '', 'season': '01'}
     reference = {
-        'series': False, 'subfolder': False, 'no_extra': False, 'match_ratio': False, 
-        'target_folder': '', 'template': '', 'episode_symbol': 'E', 'separator': '.', 
+        'series': False, 'subfolder': False, 'no_extra': False, 
+        'match_ratio': False, 'keep': False, 'target_folder': '', 
+        'template': '', 'episode_symbol': 'E', 'separator': '.', 
         'index': 0, 'length': 2, 'offset': 0, 'ratio': 0.5,
         'escape': [], 'ignore': [], 'replace': {}, 'manual': {}
         }
@@ -35,62 +36,61 @@ class JsonProcess:
             exits(f'{self.jsonfile} is not properly json formated!')
         finally:
             try:
-                ProcessData.metadata.update(data['metadata'])
+                Data.metadata.update(data['metadata'])
             except KeyError:
                 exits(f'{self.jsonfile} must contain metadata!')
             except UnboundLocalError:
                 exits(f'cannot decode {self.jsonfile}!')
             try:
-                ProcessData.reference.update(data['reference'])
-            except KeyError:
-                pass
+                Data.reference.update(data['reference'])
+            except Exception as e:
+                exits(f'unknown error: {str(e)}')
 
     def checkReferenceBool(self) -> None:
-        for j in ['series', 'subfolder', 'no_extra', 'match_ratio']:
-            if not isinstance(ProcessData.reference[j], bool): 
+        for j in ['series', 'subfolder', 'no_extra', 'match_ratio', 'keep']:
+            if not isinstance(Data.reference[j], bool): 
                 exits(f'reference {j} need to be True or False!')
 
     def checkReferenceStr(self) -> None:
-        if not bool(ProcessData.reference['target_folder']):
-            ProcessData.reference['target_folder'] = str(Path().absolute())
-        if len(ProcessData.reference['separator']) > 1:
+        if not bool(Data.reference['target_folder']):
+            Data.reference['target_folder'] = str(Path().absolute())
+        if len(Data.reference['separator']) > 1:
             exits('reference separator can only hold less than 2 character!')
-        if ProcessData.reference['series'] or ProcessData.reference['match_ratio']:
-            if not bool(ProcessData.reference['template']):
+        if Data.reference['series'] or Data.reference['match_ratio']:
+            if not bool(Data.reference['template']):
                 exits('reference template cannot be empty when series or match_ratio is true!')
         for t in ['target_folder', 'template', 'separator', 'episode_symbol']:
-            if not isinstance(ProcessData.reference[t], str):
-                ProcessData.reference[t] = str(ProcessData.reference[t])
+            if not isinstance(Data.reference[t], str):
+                Data.reference[t] = str(Data.reference[t])
         # you can use : and \ and / in target_folder
-        for k in ProcessData.reference.keys():
+        for k in Data.reference.keys():
             if k == 'target_folder':
-                if bool(search(self.ESCAPE_CHAR[7:], ProcessData.reference['target_folder'])):
+                if bool(search(self.ESCAPE_CHAR[7:], Data.reference[k])):
                     exits('invaid character *?"<>| in reference target_folder!')
-                continue
-            if isinstance(ProcessData.reference[k], str):
-                if bool(search(self.ESCAPE_CHAR, ProcessData.reference[k])):
+            elif isinstance(Data.reference[k], str):
+                if bool(search(self.ESCAPE_CHAR, Data.reference[k])):
                     exits(f'invaid character \\/:*?"<>| in reference {k}!')
 
     def checkReferenceInt(self) -> None:
         for l in ['index', 'length', 'offset']:
-            if not isinstance(ProcessData.reference[l], int):
+            if not isinstance(Data.reference[l], int):
                 exits(f'reference {l} need to be a number like 5 neither 5.0 nor 05 nor "5"')
         for n in ['index', 'length']:
-            if  ProcessData.reference[n] < 0:
+            if  Data.reference[n] < 0:
                 exits(f'reference {n} need to be a number greater than or equal to 0')
 
     def checkReferenceFloat(self) -> None:
-        if not isinstance(ProcessData.reference['ratio'], float):
+        if not isinstance(Data.reference['ratio'], float):
             exits('reference ratio need to be a number like 0.5 neither 5 nor 5.0 nor 05 nor "5"')
-        if not 0 < ProcessData.reference['ratio'] < 1:
+        if not 0 < Data.reference['ratio'] < 1:
             exits('reference ratio need to be a number greater than 0 and less than 1')
 
     def checkReferenceList(self) -> None:
         # you can use : and \ and / in escape and ignore
         for p in ['escape', 'ignore']:
-            if not isinstance(ProcessData.reference[p], list): 
+            if not isinstance(Data.reference[p], list): 
                 exits(f'reference {p} need to be a list!')
-            for f in ProcessData.reference[p]:
+            for f in Data.reference[p]:
                 if not isinstance(f, str): 
                     exits(f'reference {p} can only store string!')
                 if bool(search(self.ESCAPE_CHAR[7:], f)):
@@ -98,63 +98,65 @@ class JsonProcess:
 
     def checkReferenceDict(self) -> None:
         for d in ['replace', 'manual']:
-            if not isinstance(ProcessData.reference[d], dict): 
+            if not isinstance(Data.reference[d], dict): 
                 exits(f'reference {d} need to be a dictionary!')
-            for i in (set(ProcessData.reference[d].keys()) | set(ProcessData.reference[d].values())):
+            for i in (set(Data.reference[d].keys()) | set(Data.reference[d].values())):
                 if not isinstance(i, str): 
                     exits(f'reference {d} can only store string!')
         # you can use every character in replace
         # you can use : and \ and / in manual
-        for u in ProcessData.reference['manual'].keys():
+        for u in Data.reference['manual'].keys():
             if not bool(search(r'\\|/', u)):
                 exits("reference manual's key must be a path")
-            if bool(search(self.ESCAPE_CHAR[7:], (u or ProcessData.reference['manual'][u]))):
+            if bool(search(self.ESCAPE_CHAR[7:], (u or Data.reference['manual'][u]))):
                 exits('invaid character *?"<>| in reference manual!')
 
     def checkWriteAccess(self) -> None:
         # test write access in target_folder
         try:
             current_time = strftime("%Y_%m_%d_%H-%M-%S", localtime())
-            testfolder = Path(ProcessData.reference['target_folder']).joinpath(f'lotus_{current_time}')
+            testfolder = Path(Data.reference['target_folder']).joinpath(f'lotus_{current_time}')
             testfolder.mkdir(parents=True)
             testfolder.rmdir()
-        except:
-            exits(f'have no write access in {ProcessData.reference["target_folder"]}!')
+        except PermissionError:
+            exits(f'have no write access in {Data.reference["target_folder"]}!')
+        except Exception as e:
+            exits(f'unknown error: {str(e)}')
 
     def checkMetadata(self) -> None:
-        if not bool(ProcessData.metadata['title']):
+        if not bool(Data.metadata['title']):
             exits('title cannot be empty!')
-        for k in ProcessData.metadata.keys():
-            if not isinstance(ProcessData.metadata[k], str):
-                ProcessData.metadata[k] = str(ProcessData.metadata[k])
-            if bool(search(self.ESCAPE_CHAR, ProcessData.metadata[k])):
+        for k in Data.metadata.keys():
+            if not isinstance(Data.metadata[k], str):
+                Data.metadata[k] = str(Data.metadata[k])
+            if bool(search(self.ESCAPE_CHAR, Data.metadata[k])):
                 exits(f'invaid character \\/:*?"<>| in metadata {k}')
-        if ProcessData.reference['series']:
-            if ProcessData.metadata['season'].isdigit():
-                ProcessData.metadata['season'] = f"S{ProcessData.metadata['season']}"
+        if Data.reference['series']:
+            if Data.metadata['season'].isdigit():
+                Data.metadata['season'] = f"S{Data.metadata['season']}"
         else:
-            ProcessData.metadata['season'] = ''
+            Data.metadata['season'] = ''
 
     def processMetadata(self) -> dict:
         name_prefix = ''
         for i in ['title', 'original_title', 'season']:
-            if bool(ProcessData.metadata[i]):
-                name_prefix += f'{ProcessData.reference["separator"]}{ProcessData.metadata[i]}'
-            ProcessData.metadata.pop(i)
+            if bool(Data.metadata[i]):
+                name_prefix += f'{Data.reference["separator"]}{Data.metadata[i]}'
+            Data.metadata.pop(i)
         name_prefix = name_prefix[1:]
         
         name_postfix = ''
         try:
-            for j in ProcessData.metadata.values():
+            for j in Data.metadata.values():
                 if bool(j):
-                    name_postfix += f'{ProcessData.reference["separator"]}{j}'
+                    name_postfix += f'{Data.reference["separator"]}{j}'
         except:
             pass
         
-        ProcessData.metadata.clear()
-        ProcessData.metadata.update({'name_prefix': name_prefix})
-        ProcessData.metadata.update({'name_postfix': name_postfix})
-        return ProcessData.metadata
+        Data.metadata.clear()
+        Data.metadata.update({'name_prefix': name_prefix})
+        Data.metadata.update({'name_postfix': name_postfix})
+        return Data.metadata
 
     def action(self) -> None:
         self.loadJson()
@@ -172,117 +174,111 @@ class JsonProcess:
         self.action()
 
 class FileProcess:
-    def __init__(self, file_name: str) -> None:
-        self.file_name = file_name
-        if bool(search(r'\\|/', self.file_name)):
-            exits('file_name can not be a path')
-
+    def __init__(self, dir: Path) -> None:
+        self.dir = dir
+    
     def getEpisode(self) -> str:
-        EXTRA_INFO = r'pv|teaser|trailer|scene|clip|interview|extra|deleted'
-        self.dotepisode = ''
-        if bool(search(EXTRA_INFO, self.file_name, flags=IGNORECASE)):
+        number = compile(r'\d+(?:\.\d+)?')
+        episode = number.findall(self.name)
+        if (episode == []
+            ) or (len(episode) < Data.reference['index']
+            ) or (episode == number.findall(Data.reference['template'])):
             self.episode = ''
-            return self.episode
         else:
-            episode = findall(r'\d+', self.file_name)
-            if episode == [] or len(episode) < ProcessData.reference['index']:
-                self.episode = ''
-                return self.episode
-            elif episode == findall(r'\d+', ProcessData.reference['template']):
-                self.episode = ''
-                return self.episode
+            self.episode = episode[Data.reference['index']]
+        return self.episode
+    
+    def trueEpisode(self) -> str:
+        self.getEpisode()
+        if bool(self.episode):
+            if bool(search(r'\.', self.episode)):
+                f, b = self.episode.split('.')
+                self.true_episode = f'{str(
+                    int(f) - Data.reference['offset']
+                    ).zfill(Data.reference['length'])}.{b}'
             else:
-                self.episode = episode[ProcessData.reference['index']]
-                string_count = 0
-                for y in ndiff(ProcessData.reference['template'], self.file_name):
-                    if y[0] != ' ':
-                        break
-                    string_count += 1
-                dotepisode = findall(r'^\.\d+', self.file_name[(string_count + len(self.episode)):])
-                if bool(dotepisode):
-                    self.dotepisode = dotepisode[0]
-                return self.episode
-
-    def getExtension(self) -> str:
-        if not bool(findall(r'\.', self.file_name)):
-            self.extension = ''
-            return self.extension
-        else:
-            self.extension = self.file_name.split('.')[-1]
-            return self.extension
-
+                self.true_episode = str(
+                    int(self.episode) - Data.reference['offset']
+                    ).zfill(Data.reference['length'])
+            return self.true_episode
+        return None
+    
     def getExtra(self) -> str:
         if SequenceMatcher(
-                a=ProcessData.reference['template'], 
-                b=self.file_name
-                ).ratio() >= ProcessData.reference['ratio']:
+                a=Data.reference['template'], 
+                b=self.name
+                ).ratio() >= Data.reference['ratio']:
             extra = [
                 x 
-                for x in ndiff(ProcessData.reference['template'], self.file_name) 
+                for x in ndiff(Data.reference['template'], self.name) 
                 if x[0] == '+'
                 ]
             self.extra = ''.join([i[2] for i in extra])
         else:
-            self.extra = self.file_name
+            self.extra = self.name
         
-        if ProcessData.reference['series']:
+        if Data.reference['series']:
             self.extra = sub(self.episode, r'', self.extra, count=1)
-            self.extra = sub(self.dotepisode, r'', self.extra, count=1)
-        if bool(self.extension):
-            self.extra = sub(f'.{self.extension}', r'', self.extra, count=1)
+        for i in Data.reference['replace'].keys():
+            self.extra = sub(i, Data.reference['replace'][i], self.extra)
         if set(findall(r'.', self.extra)) in [{'.', ' '}, {'.'}, {' '}]:
             self.extra = ''
         return self.extra
 
     def getTargetName(self) -> str:
         name_deque = deque()
-        if ProcessData.reference['series']:
-            if bool(self.getEpisode()):
-                self.true_episode = str(int(self.episode) - ProcessData.reference['offset'])
-                self.true_episode = self.true_episode.zfill(ProcessData.reference['length'])
-                self.true_episode += self.dotepisode
+        if Data.reference['series']:
+            if bool(self.trueEpisode()):
                 name_deque.append(
-                    f'{ProcessData.reference["separator"]}'\
-                    f'{ProcessData.reference["episode_symbol"]}'\
-                    f'{self.true_episode}'
+                    f'{Data.reference["separator"]
+                    }{Data.reference["episode_symbol"]
+                    }{self.true_episode}'
                     )
-        name_deque.appendleft(ProcessData.metadata['name_prefix'])
-        name_deque.append(ProcessData.metadata['name_postfix'])
-        self.getExtension()
-        if not ProcessData.reference['no_extra']:
-            if bool(ProcessData.reference['template']):
+        name_deque.appendleft(Data.metadata['name_prefix'])
+        name_deque.append(Data.metadata['name_postfix'])
+        if not Data.reference['no_extra']:
+            if bool(Data.reference['template']):
                 if bool(self.getExtra()):
-                    name_deque.append(ProcessData.reference['separator'] + self.extra)
-        if bool(self.extension):
-            name_deque.append('.' + self.extension)
-        
+                    name_deque.append(Data.reference['separator'] + self.extra)
+        name_deque.append(self.extension)
+
         self.target_name = ''.join([x for x in name_deque])
-        
-        for i in ProcessData.reference['replace'].keys():
-            self.target_name = sub(i, ProcessData.reference['replace'][i], self.target_name)
-        
         return self.target_name
 
-    def getTargetPath(self) -> str:
-        target_folder = Path(ProcessData.reference['target_folder'])
+    def getTargetFolder(self) -> Path:
+        self.target_folder = Path(Data.reference['target_folder'])
+        if Data.reference['keep']:
+            self.target_folder = self.target_folder.joinpath(self.diff)
         try:
-            if ProcessData.reference['subfolder'] and bool(self.episode):
-                target_folder = target_folder.joinpath(self.true_episode)
+            if Data.reference['subfolder'] and bool(self.episode):
+                self.target_folder = self.target_folder.joinpath(self.true_episode)
         except:
             pass
-        
-        self.target_path = str(target_folder.joinpath(self.target_name))
-        return self.target_path
+        return self.target_folder
 
-    def __str__(self) -> str:
-        self.getTargetName()
-        self.getTargetPath()
+    def getTargetPath(self, path: Path) -> Path:
+        self.path = path
+        self.name = self.path.stem
+        self.extension = self.path.suffix
+        if self.path != self.dir:
+            self.diff = Path('/'.join(
+                [i for i in self.path.parts[len(self.dir.parts):(len(self.path.parts) - 1)]]
+                ))
+        else:
+            self.diff = Path('')
+        if self.path in Data.reference['manual'].keys():
+            self.target_path = Path(Data.reference['manual'][self.path])
+        else:
+            self.getTargetName()
+            self.getTargetFolder()
+            self.target_path = self.target_folder.joinpath(self.target_name)
         return self.target_path
+    
+    def __str__(self, path: Path):
+        return str(self.getTargetPath(path))
 
-    def __call__(self) -> str:
-        self.getTargetName()
-        self.getTargetPath()
-        return self.target_path
+    def __call__(self, path: Path) -> Path:
+        return self.getTargetPath(path)
 
 class Lotus:
     def __init__(self) -> None:
@@ -324,22 +320,22 @@ class Lotus:
             exits('recursive was given a wrong type')
 
     def processList(self, key) -> list:
-        for i in range(len(ProcessData.reference[key])):
-            if search(r'^\.[\\/]', ProcessData.reference[key][i]):
-                ProcessData.reference[key][i] = self.dir.joinpath(ProcessData.reference[key][i])
+        for i in range(len(Data.reference[key])):
+            if search(r'^\.[\\/]', Data.reference[key][i]):
+                Data.reference[key][i] = self.dir.joinpath(Data.reference[key][i])
             else:
-                ProcessData.reference[key][i] = Path(ProcessData.reference[key][i])
-        return ProcessData.reference[key]
+                Data.reference[key][i] = Path(Data.reference[key][i])
+        return Data.reference[key]
 
     def processManual(self) -> dict:
         items = {}
-        for i in ProcessData.reference['manual'].keys():
+        for i in Data.reference['manual'].keys():
             if search(r'^\.[\\/]', i):
-                items.update({self.dir.joinpath(i): ProcessData.reference['manual'][i]})
+                items.update({self.dir.joinpath(i): Data.reference['manual'][i]})
             else:
-                items.update({Path(i): ProcessData.reference['manual'][i]})
-        ProcessData.reference['manual'] = items
-        return ProcessData.reference['manual']
+                items.update({Path(i): Data.reference['manual'][i]})
+        Data.reference['manual'] = items
+        return Data.reference['manual']
 
     def recursiveFilepool(self):
         for i in self.path.rglob('*'):
@@ -351,61 +347,45 @@ class Lotus:
             if i.is_file():
                 yield i
 
-    def action(self, origin_path: Path, target_path: Path) -> None:
-        pass
+    def check(self, path: Path, key: str) -> bool:
+        if path in Data.reference[key] or Path(path.name) in Data.reference[key]:
+            return True
+        return False
 
-    def hardlinkAction(self, origin_path: Path, target_path: Path) -> None:
-        target_path.hardlink_to(origin_path)
-
-    def softlinkAction(self, origin_path: Path, target_path: Path) -> None:
-        target_path.symlink_to(origin_path, target_is_directory=False)
-
-    def renameAction(self, origin_path: Path, target_path: Path) -> None:
-        origin_path.rename(target_path)
-
-    def linkAction(self, origin_path: Path) -> str:
-        if origin_path in ProcessData.reference['ignore'] \
-            or Path(origin_path.name) in ProcessData.reference['ignore']:
-            return ''
-        
-        if origin_path in ProcessData.reference['escape'] \
-            or Path(origin_path.name) in ProcessData.reference['escape']:
-            target_path = Path(ProcessData.reference['target_folder']).joinpath(origin_path.name)
-        elif origin_path in ProcessData.reference['manual'].keys():
-            target_path = Path(ProcessData.reference['manual'][origin_path])
-        elif ProcessData.reference['match_ratio']:
-            if SequenceMatcher(
-                a=ProcessData.reference['template'], 
-                b=origin_path.name
-                ).ratio() >= ProcessData.reference['ratio']:
-                target_path = Path(FileProcess(origin_path.name)())
+    def linkAction(self, path: Path) -> str:
+        if self.check(path, 'ignore'):
+            return f'{path} is in ignore list'
+        elif Data.reference['match_ratio']:
+            if not SequenceMatcher(
+                a=Data.reference['template'], 
+                b=path.name
+                ).ratio() >= Data.reference['ratio']:
+                return f'{path} does not match ratio'
+        else:
+            if self.check(path, 'escape'):
+                target_path = Path(Data.reference['target_folder']).joinpath(path.name)
             else:
-                return ''
-        elif not ProcessData.reference['match_ratio']:
-            target_path = Path(FileProcess(origin_path.name)())
-        else:
-            return ''
-        
-        if not self.link_option == 'test' and not target_path.parent.exists():
-            target_path.parent.mkdir(parents=True)
-        # side effect link files
-        if not target_path.is_file():
-            self.action(origin_path, target_path)
-            return f'{origin_path} <={self.link_option}=> {target_path}'
-        else:
-            return f'"{target_path}" already exist'
+                target_path = FileProcess(self.dir)(path)
+            if not target_path.parent.exists():
+                if self.link_option != 'test':
+                    target_path.parent.mkdir(parents=True)
+            if not target_path.is_file():
+                if self.link_option == 'hardlink':
+                    target_path.hardlink_to(path)
+                elif self.link_option == 'softlink':
+                    target_path.symlink_to(path, target_is_directory=False)
+                elif self.link_option == 'rename':
+                    path.rename(target_path)
+                return f'{path} <={self.link_option}=> {target_path}'
+            else:
+                return f'{target_path} already exist'
 
     def autoLink(self) -> None:
-        if self.link_option == 'hardlink':
-            self.action = self.hardlinkAction
-        if self.link_option == 'softlink':
-            self.action = self.softlinkAction
-        if self.link_option == 'rename':
-            self.action = self.renameAction
         if self.path.is_dir():
-            file_pool = self.unRecursiveFilepool
             if self.recursive:
                 file_pool = self.recursiveFilepool
+            else:
+                file_pool = self.unRecursiveFilepool
             with ThreadPoolExecutor() as executor:
                 for single_task in executor.map(self.linkAction, file_pool()):
                     print(single_task)
