@@ -1,0 +1,15 @@
+{
+    "metadata": {
+        "title": "exampletv",
+        "season": "S02",
+        "rest": "[Japanese][Chinese][WebRip][1080P][AAC][H264][8Bit][somegroup]"
+    },
+    "reference": {
+        "index": 1,
+        "series": true,
+        "length": 4,
+        "target_folder": "destination/season02",
+        "template": "[F1] exampletv  [1920x1080p][AAC][AVC][JA][CHS]",
+        "separator": " "
+    }
+}
