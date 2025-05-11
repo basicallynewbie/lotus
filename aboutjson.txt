@@ -30,8 +30,6 @@
 
 notice:
 
-  ! you can't use softlink in windows due to perssion error.
-
   no need to use UTF-8 encode now, but it's still recommend to.
 
   str: character surrounded by double quotation marks.
@@ -79,7 +77,9 @@ reference:
 
   "no_extra" (bool) will not colect any extra info even template is configed.
 
-  "match_ratio" (bool) will ignore files which match template less than ratio. depend on ratio and template.
+  "match_ratio" (bool) will ignore files which match template less than ratio. Depend on ratio and template.
+
+  "keep" (bool) will keep origin folder structure. Will not work if this file in escape, ignore or manual.
 
   "target_folder" (str) is where the video file after hard/symbolic link will be. if not set, will default to terminal current working path.
 
@@ -123,7 +123,7 @@ reference:
     "ignore": ["ignore.txt"]
     nothing will happen to ignore.txt.
 
-  "replace" (dict) will replace all key with value. For example:
+  "replace" (dict) will replace all key with value in extra. For example:
     "replace": {"fuck": "shit"}
     [1stgroup]F1 race 2 02 fuck no, my team failed again, fuck [1920x1080][AAC][AVC].mp4
     will replace all "fuck" with "shit": "[1stgroup]F1 race 2 02 shit no, my team failed again, shit [1920x1080][AAC][AVC].mp4".
