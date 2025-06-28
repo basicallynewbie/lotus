@@ -1,0 +1,10 @@
+﻿run "python3 createfile.py" to create 2000 files for test.
+执行"python3 createfile.py"来创建2000个文件用于测试。
+
+before running this cmd, copy lotus.py into current directory. 
+在运行以下命令前，请把lotus.py复制到当前路径。
+
+If using windows, change python3 to python. you can't use softlink in windows due to PermissionError. But you can use softlink as Administrator.
+如果使用windows，请把python3改成python。因为权限问题，你不能在windows中使用softlink。但是能以管理员身份使用softlink。
+
+python3 lotus.py hardlink source example.json -r
