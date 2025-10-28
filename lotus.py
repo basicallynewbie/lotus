@@ -7,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from time import time, strftime, localtime
 from collections import deque
 from codecs import open as opens
+from argparse import ArgumentParser
 
 
 class Data:
@@ -99,15 +100,15 @@ class JsonProcess:
             exits("reference ratio need to be a number greater than 0 and less than 1")
 
     def checkReferenceList(self) -> None:
-        # you can use : and \ and / in escape and ignore
+        # you can use : and \ and / and * in escape and ignore
         for p in ["escape", "ignore"]:
             if not isinstance(Data.reference[p], list):
                 exits(f"reference {p} need to be a list!")
             for f in Data.reference[p]:
                 if not isinstance(f, str):
                     exits(f"reference {p} can only store string!")
-                if bool(search(self.ESCAPE_CHAR[7:], f)):
-                    exits(f'invaid character *?"<>| in reference {p}!')
+                if bool(search(self.ESCAPE_CHAR[10:], f)):
+                    exits(f'invaid character ?"<>| in reference {p}!')
 
     def checkReferenceDict(self) -> None:
         for d in ["replace", "manual"]:
@@ -332,15 +333,21 @@ class Lotus:
         if not isinstance(self.recursive, bool):
             exits("recursive was given a wrong type")
 
-    def processList(self, key: str) -> list:
-        for i in range(len(Data.reference[key])):
-            if search(r"^\.[\\/]", Data.reference[key][i]):
-                Data.reference[key][i] = self.dir.joinpath(Data.reference[key][i])
+    def processList(self, key: str) -> None:
+        temp = []
+        dot_start = compile(r"^\.[\\/]")
+        glob_match = compile(r"\*")
+        for i in Data.reference[key]:
+            if dot_start.search(i):
+                temp.append(self.dir.joinpath(i))
+            elif glob_match.search(i):
+                for l in self.dir.glob(i):
+                    temp.append(l)
             else:
-                Data.reference[key][i] = Path(Data.reference[key][i])
-        return Data.reference[key]
+                temp.append(Path(i))
+        Data.reference.update({key: temp})
 
-    def processManual(self) -> dict:
+    def processManual(self) -> None:
         items = {}
         for i in Data.reference["manual"].keys():
             if search(r"^\.[\\/]", i):
@@ -348,7 +355,6 @@ class Lotus:
             else:
                 items.update({Path(i): Data.reference["manual"][i]})
         Data.reference["manual"] = items
-        return Data.reference["manual"]
 
     def recursiveFilepool(self):
         for i in self.path.rglob("*"):
@@ -428,9 +434,7 @@ class Lotus:
         print(f"Total runtime of the program is {end - begin} s")
 
 
-if __name__ == "__main__":
-    from argparse import ArgumentParser
-    
+def cli() -> None:
     parser = ArgumentParser(
             prog="lotus",
             description="hardlink or softlink file/s with another name in another path in batch",
@@ -469,3 +473,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     Lotus().cmd(args.option, args.path, args.jsonfile, args.recursive, args.encode)
+
+
+if __name__ == "__main__":
+    cli()
