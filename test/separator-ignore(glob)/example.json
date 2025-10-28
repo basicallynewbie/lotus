@@ -1,0 +1,17 @@
+{
+    "metadata": {
+        "title": "Candy house",
+        "original_title": "Hansel and Gretel",
+        "year": "2025"
+    },
+    "reference": {
+        "target_folder": "destination",
+        "separator": "-",
+        "ignore": [
+            "icon.txt",
+            "post*.txt",
+            "t*"
+
+        ]
+    }
+}
