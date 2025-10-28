@@ -59,6 +59,10 @@ notice:
 
   for more informations, look test folder.
 
+warning:
+  
+  when use escape and ignore, don't mix use ./ or .\ with *, or else unknown result will be produced.
+
 metadata:
 
   "title" (str) is what the title of the video file after hard/symbolic link will be, which must be set.
