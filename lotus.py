@@ -338,11 +338,13 @@ class Lotus:
         dot_start = compile(r"^\.[\\/]")
         glob_match = compile(r"\*")
         for i in Data.reference[key]:
-            if dot_start.search(i):
-                temp.append(self.dir.joinpath(i))
-            elif glob_match.search(i):
+            if glob_match.search(i):
                 for l in self.dir.glob(i):
                     temp.append(l)
+            elif dot_start.search(i):
+                if glob_match.search(i):
+                    exits()
+                temp.append(self.dir.joinpath(i))
             else:
                 temp.append(Path(i))
         Data.reference.update({key: temp})
