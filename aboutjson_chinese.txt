@@ -42,7 +42,8 @@
 
   特殊符号是\/:*?"<>|
   replace中可以使用任何符号
-  target_folder和escape和ignore可以使用\:/ 
+  target_folder可以使用\:/ 
+  escape和ignore可以使用\:/*
   manual可以使用\:/ 并且manual的键必须为路径
   在其它地方不能使用特殊符号
 
@@ -52,9 +53,12 @@
     将会变成"manual": {"dir/s.txt": "./d.txt"}
     "./d.txt"在windows中将会创建个名为.的文件夹，在unix中不会。
 
-    除了title外，都不是必要的。
+  除了title外，都不是必要的。
 
-  
+  escape和ignore现在支持glob，意味着可以使用*作为通配符来匹配单个或多个字符，可以使用**进行递归搜索。
+
+  浏览test文件夹了解更多信息。
+
 metadata:
 
   "title" (str) 是源文件在链接后的标题名，必须设置。
