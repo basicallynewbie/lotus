@@ -42,7 +42,8 @@ notice:
 
   special character are \/:*?"<>|
   replace can use every character
-  target_folder and escape and ignore can use \:/ 
+  target_folder can use \:/ 
+  escape and ignore can use \:/*
   manual can use \:/ and manual's key must be a path
   in other place, you can not used special character.
 
@@ -53,6 +54,8 @@ notice:
     "./d.txt" in windows, will create a directory with name ".". In unix, will not create directory.
 
   everything except title is optional.
+
+  escape and ignore now support glob, means you can use * as wildcard to match one or more characters, and ** to perform recursively search.
 
   for more informations, look test folder.
 
